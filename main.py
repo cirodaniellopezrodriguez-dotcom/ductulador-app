@@ -3,10 +3,10 @@ import math
 import datetime
 
 def main(page: ft.Page):
-    page.title = "DUCTULADOR V8 - RAMIFICADO"
+    page.title = "DUCTULADOR V8"
     page.scroll = ft.ScrollMode.AUTO
     page.theme_mode = ft.ThemeMode.DARK
-    page.padding = 10
+    page.padding = 6  # Padding más reducido para celular
 
     BG_CARD = "#1e293b"
     BG_DARK = "#0f172a"
@@ -39,25 +39,25 @@ def main(page: ft.Page):
                 high = b
         return math.ceil(low)
 
-    txt_proyecto = ft.TextField(label="NOMBRE DEL PROYECTO", hint_text="Ej: Restaurante EQ3", border_color=BORDER_COLOR)
-    txt_cliente = ft.TextField(label="CLIENTE", hint_text="Cliente", border_color=BORDER_COLOR, expand=True)
-    txt_telefono = ft.TextField(label="TELÉFONO", hint_text="618-123-4567", border_color=BORDER_COLOR, expand=True)
-    txt_direccion = ft.TextField(label="DIRECCIÓN", hint_text="Punto Guadiana", border_color=BORDER_COLOR, expand=True)
-    txt_fecha = ft.TextField(label="FECHA", value=datetime.date.today().strftime("%Y-%m-%d"), border_color=BORDER_COLOR, expand=True)
+    txt_proyecto = ft.TextField(label="PROYECTO", hint_text="Ej: Restaurante", border_color=BORDER_COLOR, text_size=13)
+    txt_cliente = ft.TextField(label="CLIENTE", hint_text="Cliente", border_color=BORDER_COLOR, expand=True, text_size=13)
+    txt_telefono = ft.TextField(label="TELÉFONO", hint_text="618-123-4567", border_color=BORDER_COLOR, expand=True, text_size=13)
+    txt_direccion = ft.TextField(label="DIRECCIÓN", hint_text="Punto Guadiana", border_color=BORDER_COLOR, expand=True, text_size=13)
+    txt_fecha = ft.TextField(label="FECHA", value=datetime.date.today().strftime("%Y-%m-%d"), border_color=BORDER_COLOR, expand=True, text_size=13)
 
     dd_tipo = ft.Dropdown(
         label="TIPO",
         options=[
-            ft.dropdown.Option("18", "Casa 18m2/T"),
-            ft.dropdown.Option("15", "Comercio 15m2/T"),
-            ft.dropdown.Option("12", "Caliente 12m2/T"),
+            ft.dropdown.Option("18", "Casa 18m²/T"),
+            ft.dropdown.Option("15", "Comercio 15m²/T"),
+            ft.dropdown.Option("12", "Caliente 12m²/T"),
         ],
         value="15",
         expand=True
     )
 
     dd_caida = ft.Dropdown(
-        label="CAIDA",
+        label="CAÍDA",
         options=[
             ft.dropdown.Option("0.08", "0.08"),
             ft.dropdown.Option("0.10", "0.10"),
@@ -68,7 +68,7 @@ def main(page: ft.Page):
     )
 
     col_areas = ft.Column()
-    card_resultado = ft.Container(visible=False, bgcolor=BG_CARD, padding=14, border_radius=14, border=ft.Border.all(1, BORDER_COLOR))
+    card_resultado = ft.Container(visible=False, bgcolor=BG_CARD, padding=8, border_radius=10, border=ft.Border.all(1, BORDER_COLOR))
     
     state = {"last_total_cfm": 0, "last_diam_tot": 0}
     areas_list = []
@@ -95,17 +95,17 @@ def main(page: ft.Page):
 
         idx = len(areas_list) + 1
         
-        txt_nom = ft.TextField(value=f"Area {idx}", border_color=BORDER_COLOR)
-        txt_largo = ft.TextField(label="LARGO (m)", hint_text="4", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR)
-        txt_ancho = ft.TextField(label="ANCHO (m)", hint_text="4", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR)
-        txt_m2_directo = ft.TextField(label="M2 DIRECTOS", hint_text="16", keyboard_type=ft.KeyboardType.NUMBER, border_color=BORDER_COLOR)
-        txt_alto = ft.TextField(label="ALTURA AREA (m)", value="2.5", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR)
-        txt_h_ducto = ft.TextField(label="ALTURA DUCTO (0=cuadrado)", value="0", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=ACCENT_YELLOW)
+        txt_nom = ft.TextField(value=f"Area {idx}", border_color=BORDER_COLOR, text_size=13)
+        txt_largo = ft.TextField(label="LARGO (m)", hint_text="4", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13)
+        txt_ancho = ft.TextField(label="ANCHO (m)", hint_text="4", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13)
+        txt_m2_directo = ft.TextField(label="M² DIRECTOS", hint_text="16", keyboard_type=ft.KeyboardType.NUMBER, border_color=BORDER_COLOR, text_size=13)
+        txt_alto = ft.TextField(label="ALTURA ÁREA (m)", value="2.5", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13)
+        txt_h_ducto = ft.TextField(label="ALTURA DUCTO (0=cuadrado)", value="0", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=ACCENT_YELLOW, text_size=13)
 
         dd_ramal = ft.Dropdown(
-            label="LINEA / RAMAL",
+            label="LÍNEA / RAMAL",
             options=[
-                ft.dropdown.Option("PRINCIPAL", "Principal (Tronco General)"),
+                ft.dropdown.Option("PRINCIPAL", "Principal (Tronco)"),
                 ft.dropdown.Option("RAMAL_A", "Ramal Brazo A"),
                 ft.dropdown.Option("RAMAL_B", "Ramal Brazo B"),
             ],
@@ -113,21 +113,21 @@ def main(page: ft.Page):
             expand=True
         )
 
-        lbl_res_area = ft.Text("", size=13, color=ACCENT_CYAN, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER)
+        lbl_res_area = ft.Text("", size=12, color=ACCENT_CYAN, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER)
 
         box_medidas = ft.Row([txt_largo, txt_ancho])
         box_m2 = ft.Column([txt_m2_directo], visible=False)
 
-        txt_b_med = ft.Text("POR MEDIDAS", color="black", weight=ft.FontWeight.BOLD, size=12, text_align=ft.TextAlign.CENTER)
-        txt_b_m2 = ft.Text("M2 DIRECTO", color=TEXT_MUTED, weight=ft.FontWeight.BOLD, size=12, text_align=ft.TextAlign.CENTER)
+        txt_b_med = ft.Text("POR MEDIDAS", color="black", weight=ft.FontWeight.BOLD, size=11, text_align=ft.TextAlign.CENTER)
+        txt_b_m2 = ft.Text("M² DIRECTO", color=TEXT_MUTED, weight=ft.FontWeight.BOLD, size=11, text_align=ft.TextAlign.CENTER)
 
         btn_medidas = ft.Container(
             content=ft.Row([txt_b_med], alignment=ft.MainAxisAlignment.CENTER),
-            bgcolor=ACCENT_YELLOW, padding=8, border_radius=8, expand=True, border=ft.Border.all(1, "#475569")
+            bgcolor=ACCENT_YELLOW, padding=6, border_radius=6, expand=True, border=ft.Border.all(1, "#475569")
         )
         btn_m2 = ft.Container(
             content=ft.Row([txt_b_m2], alignment=ft.MainAxisAlignment.CENTER),
-            bgcolor=BG_CARD, padding=8, border_radius=8, expand=True, border=ft.Border.all(1, "#475569")
+            bgcolor=BG_CARD, padding=6, border_radius=6, expand=True, border=ft.Border.all(1, "#475569")
         )
 
         item = {
@@ -153,12 +153,12 @@ def main(page: ft.Page):
         btn_m2.on_click = lambda _: alternar_modo(item, "m2")
 
         btn_borrar = ft.Container(
-            content=ft.Text("X BORRAR", color="#ef4444", size=12, weight=ft.FontWeight.BOLD),
+            content=ft.Text("X BORRAR", color="#ef4444", size=11, weight=ft.FontWeight.BOLD),
             on_click=lambda _: borrar_area(item)
         )
 
         header_area = ft.Row([
-            ft.Text(f"AREA {idx}", weight=ft.FontWeight.BOLD, color="white"),
+            ft.Text(f"ÁREA {idx}", weight=ft.FontWeight.BOLD, color="white", size=13),
             btn_borrar
         ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
 
@@ -172,8 +172,8 @@ def main(page: ft.Page):
                 ft.Row([txt_alto, txt_h_ducto]),
                 dd_ramal,
                 ft.Row([lbl_res_area], alignment=ft.MainAxisAlignment.CENTER)
-            ]),
-            bgcolor=BG_DARK, padding=12, border_radius=14, border=ft.Border.all(2, "#475569")
+            ], spacing=8),
+            bgcolor=BG_DARK, padding=10, border_radius=10, border=ft.Border.all(1, "#475569")
         )
 
         item["card"] = card_area
@@ -187,14 +187,16 @@ def main(page: ft.Page):
         except ValueError:
             h_val = 0
 
+        d_tramo_redondo = math.ceil(d_remanente)
+
         if h_val <= 0:
             lado = lado_cuadrado(d_remanente)
-            lbl_medida.value = f'{lado}"x{lado}"'
-            lbl_detalles.value = f'{lado*lado} pulg² | {int(cfm_rem)} CFM remanentes'
+            lbl_medida.value = f'{lado}"x{lado}"  |  {d_tramo_redondo}" Ø'
+            lbl_detalles.value = f'{lado*lado} pulg² | {int(cfm_rem)} CFM'
         else:
             ancho = ancho_rect(d_remanente, h_val)
-            lbl_medida.value = f'{int(h_val)}"x{ancho}"'
-            lbl_detalles.value = f'{int(h_val)*ancho} pulg² | {int(cfm_rem)} CFM remanentes'
+            lbl_medida.value = f'{int(h_val)}"x{ancho}"  |  {d_tramo_redondo}" Ø'
+            lbl_detalles.value = f'{int(h_val)*ancho} pulg² | {int(cfm_rem)} CFM'
         page.update()
 
     def calcular_todo(e):
@@ -257,24 +259,22 @@ def main(page: ft.Page):
             return
 
         dt = ft.DataTable(
+            column_spacing=12,
+            data_row_min_height=42,
             columns=[
-                ft.DataColumn(ft.Text("AREA", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD)),
-                ft.DataColumn(ft.Text("M2", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD)),
-                ft.DataColumn(ft.Text("TON", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD)),
-                ft.DataColumn(ft.Text("CFM", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD)),
-                ft.DataColumn(ft.Text("DUCTO SALIDA", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD)),
-                ft.DataColumn(ft.Text("Ø SALIDA", color=ACCENT_CYAN, weight=ft.FontWeight.BOLD)),
-                ft.DataColumn(ft.Text("DUCTO TRAMO (EDITABLE)", color=ACCENT_GREEN, weight=ft.FontWeight.BOLD)),
-                ft.DataColumn(ft.Text("Ø TRAMO", color=ACCENT_CYAN, weight=ft.FontWeight.BOLD)),
+                ft.DataColumn(ft.Text("ÁREA", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=11)),
+                ft.DataColumn(ft.Text("M²", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=11)),
+                ft.DataColumn(ft.Text("TR", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=11)),
+                ft.DataColumn(ft.Text("CFM", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=11)),
+                ft.DataColumn(ft.Text("SALIDA (RECT / Ø)", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=11)),
+                ft.DataColumn(ft.Text("TRAMO DUCTO (EDITABLE)", color=ACCENT_GREEN, weight=ft.FontWeight.BOLD, size=11)),
             ],
             rows=[]
         )
 
-        # 1. Calcular los CFM totales asignados a cada ramal derivado
         cfm_ramal_a = sum(x["cfm"] for x in items_calculados if x["ramal"] == "RAMAL_A")
         cfm_ramal_b = sum(x["cfm"] for x in items_calculados if x["ramal"] == "RAMAL_B")
 
-        # 2. Contadores de flujo acumulativo
         cfm_principal_activo = total_cfm
         cfm_a_activo = cfm_ramal_a
         cfm_b_activo = cfm_ramal_b
@@ -309,11 +309,11 @@ def main(page: ft.Page):
             d_salida_redondo = math.ceil(item["d"])
             if item["h_d"] == 0:
                 lado = lado_cuadrado(item["d"])
-                propuesta_salida = f'{lado}"x{lado}"'
+                propuesta_salida = f'{lado}"x{lado}"  |  {d_salida_redondo}" Ø'
                 pulg2_salida = lado * lado
             else:
                 ancho = ancho_rect(item["d"], item["h_d"])
-                propuesta_salida = f'{int(item["h_d"])}"x{ancho}"'
+                propuesta_salida = f'{int(item["h_d"])}"x{ancho}"  |  {d_salida_redondo}" Ø'
                 pulg2_salida = int(item["h_d"]) * ancho
 
             # Ducto del Tramo
@@ -322,16 +322,15 @@ def main(page: ft.Page):
             
             if item["h_d"] == 0:
                 lado_p = lado_cuadrado(d_remanente)
-                init_medida_tramo = f'{lado_p}"x{lado_p}"'
+                init_medida_tramo = f'{lado_p}"x{lado_p}"  |  {d_tramo_redondo}" Ø'
                 init_detalles_tramo = f'{lado_p*lado_p} pulg² | {int(cfm_para_tramo)} CFM'
                 init_h_val = "0"
             else:
                 ancho_p = ancho_rect(d_remanente, item["h_d"])
-                init_medida_tramo = f'{int(item["h_d"])}"x{ancho_p}"'
+                init_medida_tramo = f'{int(item["h_d"])}"x{ancho_p}"  |  {d_tramo_redondo}" Ø'
                 init_detalles_tramo = f'{int(item["h_d"])*ancho_p} pulg² | {int(cfm_para_tramo)} CFM'
                 init_h_val = str(int(item["h_d"]))
 
-            # Colores según ramal
             if r == "PRINCIPAL":
                 lbl_color = ACCENT_GREEN
                 tag = "TRONCO"
@@ -342,15 +341,15 @@ def main(page: ft.Page):
                 lbl_color = ACCENT_PURPLE
                 tag = "RAMAL_B"
 
-            lbl_medida_tramo = ft.Text(init_medida_tramo, color=lbl_color, weight=ft.FontWeight.BOLD, size=14)
-            lbl_detalles_tramo = ft.Text(f"{init_detalles_tramo} [{tag}]", size=10, color=TEXT_MUTED)
+            lbl_medida_tramo = ft.Text(init_medida_tramo, color=lbl_color, weight=ft.FontWeight.BOLD, size=12)
+            lbl_detalles_tramo = ft.Text(f"{init_detalles_tramo} [{tag}]", size=9, color=TEXT_MUTED)
             
             txt_h_tramo_custom = ft.TextField(
                 value=init_h_val,
-                width=50,
-                height=35,
-                content_padding=5,
-                text_size=12,
+                width=42,
+                height=32,
+                content_padding=3,
+                text_size=11,
                 keyboard_type=ft.KeyboardType.NUMBER,
                 border_color=lbl_color,
                 text_align=ft.TextAlign.CENTER
@@ -362,26 +361,18 @@ def main(page: ft.Page):
 
             dt.rows.append(
                 ft.DataRow(cells=[
-                    ft.DataCell(ft.Text(nombre_con_tag, color=lbl_color if r != "PRINCIPAL" else "white")),
-                    ft.DataCell(ft.Text(f"{item['m2']:.1f}")),
-                    ft.DataCell(ft.Text(f"{item['tons']:.2f} TR", color=ACCENT_CYAN, weight=ft.FontWeight.BOLD)),
-                    ft.DataCell(ft.Text(str(int(item["cfm"])))),
+                    ft.DataCell(ft.Text(nombre_con_tag, color=lbl_color if r != "PRINCIPAL" else "white", size=11, weight=ft.FontWeight.BOLD)),
+                    ft.DataCell(ft.Text(f"{item['m2']:.1f}", size=11)),
+                    ft.DataCell(ft.Text(f"{item['tons']:.2f}", color=ACCENT_CYAN, weight=ft.FontWeight.BOLD, size=11)),
+                    ft.DataCell(ft.Text(str(int(item["cfm"])), size=11)),
                     ft.DataCell(ft.Column([
-                        ft.Text(propuesta_salida, color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD),
-                        ft.Text(f"{pulg2_salida} pulg²", size=10, color=TEXT_MUTED)
-                    ])),
-                    ft.DataCell(ft.Container(
-                        content=ft.Text(f'{d_salida_redondo}" Ø', color=ACCENT_CYAN, weight=ft.FontWeight.BOLD, size=13),
-                        padding=5, bgcolor=BG_DARK, border_radius=6
-                    )),
+                        ft.Text(propuesta_salida, color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=11),
+                        ft.Text(f"{pulg2_salida} pulg²", size=9, color=TEXT_MUTED)
+                    ], spacing=1)),
                     ft.DataCell(ft.Row([
-                        ft.Column([ft.Text("Alt:", size=9, color=TEXT_MUTED), txt_h_tramo_custom], spacing=2),
-                        ft.Column([lbl_medida_tramo, lbl_detalles_tramo], spacing=2)
+                        ft.Column([ft.Text("Alt:", size=8, color=TEXT_MUTED), txt_h_tramo_custom], spacing=1),
+                        ft.Column([lbl_medida_tramo, lbl_detalles_tramo], spacing=1)
                     ], alignment=ft.MainAxisAlignment.START, vertical_alignment=ft.CrossAxisAlignment.CENTER)),
-                    ft.DataCell(ft.Container(
-                        content=ft.Text(f'{d_tramo_redondo}" Ø', color=ACCENT_CYAN, weight=ft.FontWeight.BOLD, size=13),
-                        padding=5, bgcolor=BG_DARK, border_radius=6
-                    )),
                 ])
             )
 
@@ -392,24 +383,24 @@ def main(page: ft.Page):
 
         box_principal = ft.Container(
             content=ft.Column([
-                ft.Text("DUCTO PRINCIPAL INICIAL (SALIDA DEL EQUIPO)", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD),
+                ft.Text("DUCTO PRINCIPAL INICIAL (SALIDA DEL EQUIPO)", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=11),
                 ft.Container(
                     content=ft.Column([
-                        ft.Text(f'{lado_prin}"x{lado_prin}"  |  {d_principal_redondo}" Ø', size=20, color=ACCENT_GREEN, weight=ft.FontWeight.BOLD),
-                        ft.Text(f'{lado_prin*lado_prin} pulg² | {total_cfm:.0f} CFM TOTALES', size=11, color=TEXT_MUTED)
+                        ft.Text(f'{lado_prin}"x{lado_prin}"  |  {d_principal_redondo}" Ø', size=16, color=ACCENT_GREEN, weight=ft.FontWeight.BOLD),
+                        ft.Text(f'{lado_prin*lado_prin} pulg² | {total_cfm:.0f} CFM TOTALES', size=10, color=TEXT_MUTED)
                     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-                    bgcolor=BG_CARD, padding=10, border_radius=8
+                    bgcolor=BG_CARD, padding=8, border_radius=6
                 ),
             ]),
-            bgcolor=BG_DARK, padding=12, border_radius=10, border=ft.Border.all(2, ACCENT_YELLOW)
+            bgcolor=BG_DARK, padding=10, border_radius=8, border=ft.Border.all(1, ACCENT_YELLOW)
         )
 
         header_resumen = ft.Container(
             content=ft.Column([
-                ft.Text(f"PROYECTO: {proy}", weight=ft.FontWeight.BOLD, color="black"),
-                ft.Text(f"Cliente: {cli} | Tel: {tel}\n{dir_txt} | {fec}", size=12, color="black")
+                ft.Text(f"PROYECTO: {proy}", weight=ft.FontWeight.BOLD, color="black", size=13),
+                ft.Text(f"Cliente: {cli} | Tel: {tel}\n{dir_txt} | {fec}", size=11, color="black")
             ]),
-            bgcolor=ACCENT_YELLOW, padding=10, border_radius=8
+            bgcolor=ACCENT_YELLOW, padding=8, border_radius=6
         )
 
         total_btu = total_tr * 12000
@@ -417,23 +408,29 @@ def main(page: ft.Page):
         barra_totales = ft.Container(
             content=ft.Column([
                 ft.Row([
-                    ft.Text(f"TOTAL: {total_m2:.1f} m²", weight=ft.FontWeight.BOLD),
-                    ft.Text(f"{total_tr:.2f} TR", color=ACCENT_CYAN, size=18, weight=ft.FontWeight.BOLD),
-                    ft.Text(f"{int(total_cfm)} CFM", color=ACCENT_GREEN, weight=ft.FontWeight.BOLD)
+                    ft.Text(f"TOTAL: {total_m2:.1f} m²", weight=ft.FontWeight.BOLD, size=11),
+                    ft.Text(f"{total_tr:.2f} TR", color=ACCENT_CYAN, size=14, weight=ft.FontWeight.BOLD),
+                    ft.Text(f"{int(total_cfm)} CFM", color=ACCENT_GREEN, weight=ft.FontWeight.BOLD, size=11)
                 ], alignment=ft.MainAxisAlignment.SPACE_AROUND),
                 ft.Row([
-                    ft.Text(f"CAPACIDAD TÉRMICA TOTAL: {total_btu:,.0f} BTU/h", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=13)
+                    ft.Text(f"CAPACIDAD TÉRMICA: {total_btu:,.0f} BTU/h", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=11)
                 ], alignment=ft.MainAxisAlignment.CENTER)
             ]),
-            bgcolor=BG_CARD, padding=10, border_radius=8
+            bgcolor=BG_CARD, padding=8, border_radius=6
+        )
+
+        # Scroll Horizontal Integrado para Celulares
+        tabla_scrollable = ft.Row(
+            [dt],
+            scroll=ft.ScrollMode.ALWAYS
         )
 
         card_resultado.content = ft.Column([
             header_resumen,
-            dt,
+            tabla_scrollable,
             barra_totales,
             box_principal
-        ])
+        ], spacing=10)
         card_resultado.visible = True
         page.update()
 
@@ -445,40 +442,40 @@ def main(page: ft.Page):
         page.update()
 
     btn_add = ft.Container(
-        content=ft.Row([ft.Text("+ AGREGAR AREA", color="black", weight=ft.FontWeight.BOLD)], alignment=ft.MainAxisAlignment.CENTER),
-        bgcolor=ACCENT_YELLOW, padding=12, border_radius=10, on_click=agregar_area
+        content=ft.Row([ft.Text("+ AGREGAR ÁREA", color="black", weight=ft.FontWeight.BOLD, size=12)], alignment=ft.MainAxisAlignment.CENTER),
+        bgcolor=ACCENT_YELLOW, padding=10, border_radius=8, on_click=agregar_area
     )
     btn_calc = ft.Container(
-        content=ft.Row([ft.Text("CALCULAR TODO", color="black", weight=ft.FontWeight.BOLD)], alignment=ft.MainAxisAlignment.CENTER),
-        bgcolor=ACCENT_GREEN, padding=12, border_radius=10, on_click=calcular_todo
+        content=ft.Row([ft.Text("CALCULAR TODO", color="black", weight=ft.FontWeight.BOLD, size=12)], alignment=ft.MainAxisAlignment.CENTER),
+        bgcolor=ACCENT_GREEN, padding=10, border_radius=8, on_click=calcular_todo
     )
     btn_clean = ft.Container(
-        content=ft.Row([ft.Text("LIMPIAR", color="white", weight=ft.FontWeight.BOLD)], alignment=ft.MainAxisAlignment.CENTER),
-        bgcolor=ACCENT_BLUE, padding=12, border_radius=10, on_click=limpiar
+        content=ft.Row([ft.Text("LIMPIAR", color="white", weight=ft.FontWeight.BOLD, size=12)], alignment=ft.MainAxisAlignment.CENTER),
+        bgcolor=ACCENT_BLUE, padding=10, border_radius=8, on_click=limpiar
     )
 
     page.add(
         ft.Column([
-            ft.Text("DUCTULADOR V8", size=22, weight=ft.FontWeight.BOLD, color="white"),
-            ft.Text("FLUJO ACUMULATIVO Y RAMIFICACIONES", size=11, color=ACCENT_GREEN, weight=ft.FontWeight.BOLD)
+            ft.Text("DUCTULADOR V8", size=18, weight=ft.FontWeight.BOLD, color="white"),
+            ft.Text("FLUJO ACUMULATIVO Y RAMIFICACIONES", size=10, color=ACCENT_GREEN, weight=ft.FontWeight.BOLD)
         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
         
         ft.Container(
             content=ft.Column([
-                ft.Text("DATOS DEL PROYECTO", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD),
+                ft.Text("DATOS DEL PROYECTO", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=12),
                 txt_proyecto,
                 ft.Row([txt_cliente, txt_telefono]),
                 ft.Row([txt_direccion, txt_fecha]),
                 ft.Row([dd_tipo, dd_caida])
-            ]),
-            bgcolor=BG_CARD, padding=14, border_radius=14, border=ft.Border.all(2, ACCENT_YELLOW)
+            ], spacing=8),
+            bgcolor=BG_CARD, padding=10, border_radius=10, border=ft.Border.all(1, ACCENT_YELLOW)
         ),
         
         col_areas,
         
         ft.Container(
-            content=ft.Column([btn_add, btn_calc, btn_clean]),
-            bgcolor=BG_CARD, padding=14, border_radius=14, border=ft.Border.all(1, BORDER_COLOR)
+            content=ft.Column([btn_add, btn_calc, btn_clean], spacing=8),
+            bgcolor=BG_CARD, padding=10, border_radius=10, border=ft.Border.all(1, BORDER_COLOR)
         ),
         
         card_resultado
