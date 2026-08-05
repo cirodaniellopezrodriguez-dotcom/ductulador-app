@@ -6,7 +6,7 @@ def main(page: ft.Page):
     page.title = "DUCTULADOR V8"
     page.scroll = ft.ScrollMode.AUTO
     page.theme_mode = ft.ThemeMode.DARK
-    page.padding = 6  # Padding más reducido para celular
+    page.padding = 6
 
     BG_CARD = "#1e293b"
     BG_DARK = "#0f172a"
@@ -17,6 +17,9 @@ def main(page: ft.Page):
     ACCENT_CYAN = "#38bdf8"
     ACCENT_ORANGE = "#fb923c"
     ACCENT_PURPLE = "#a855f7"
+    ACCENT_PINK = "#ec4899"
+    ACCENT_TEAL = "#14b8a6"
+    ACCENT_AMBER = "#f59e0b"
     TEXT_MUTED = "#94a3b8"
 
     def calc_diam(cfm, p):
@@ -90,7 +93,7 @@ def main(page: ft.Page):
             page.update()
 
     def agregar_area(e=None):
-        if len(areas_list) >= 12:
+        if len(areas_list) >= 20:  # Ampliado para más áreas
             return
 
         idx = len(areas_list) + 1
@@ -108,6 +111,9 @@ def main(page: ft.Page):
                 ft.dropdown.Option("PRINCIPAL", "Principal (Tronco)"),
                 ft.dropdown.Option("RAMAL_A", "Ramal Brazo A"),
                 ft.dropdown.Option("RAMAL_B", "Ramal Brazo B"),
+                ft.dropdown.Option("RAMAL_C", "Ramal Brazo C"),
+                ft.dropdown.Option("RAMAL_D", "Ramal Brazo D"),
+                ft.dropdown.Option("RAMAL_E", "Ramal Brazo E"),
             ],
             value="PRINCIPAL",
             expand=True
@@ -259,8 +265,11 @@ def main(page: ft.Page):
             return
 
         dt = ft.DataTable(
-            column_spacing=12,
-            data_row_min_height=42,
+            column_spacing=14,
+            data_row_min_height=46,
+            border=ft.Border.all(1, ACCENT_BLUE),
+            vertical_lines=ft.BorderSide(1.5, ACCENT_CYAN),
+            horizontal_lines=ft.BorderSide(1, "#334155"),
             columns=[
                 ft.DataColumn(ft.Text("ÁREA", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=11)),
                 ft.DataColumn(ft.Text("M²", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=11)),
@@ -272,15 +281,18 @@ def main(page: ft.Page):
             rows=[]
         )
 
-        cfm_ramal_a = sum(x["cfm"] for x in items_calculados if x["ramal"] == "RAMAL_A")
-        cfm_ramal_b = sum(x["cfm"] for x in items_calculados if x["ramal"] == "RAMAL_B")
+        # Sumatoria de CFM por cada ramal
+        cfm_ramales = {
+            "RAMAL_A": sum(x["cfm"] for x in items_calculados if x["ramal"] == "RAMAL_A"),
+            "RAMAL_B": sum(x["cfm"] for x in items_calculados if x["ramal"] == "RAMAL_B"),
+            "RAMAL_C": sum(x["cfm"] for x in items_calculados if x["ramal"] == "RAMAL_C"),
+            "RAMAL_D": sum(x["cfm"] for x in items_calculados if x["ramal"] == "RAMAL_D"),
+            "RAMAL_E": sum(x["cfm"] for x in items_calculados if x["ramal"] == "RAMAL_E"),
+        }
 
         cfm_principal_activo = total_cfm
-        cfm_a_activo = cfm_ramal_a
-        cfm_b_activo = cfm_ramal_b
-
-        primer_ramal_a = True
-        primer_ramal_b = True
+        cfm_ramal_activo = cfm_ramales.copy()
+        primer_ingreso_ramal = {key: True for key in cfm_ramales}
 
         for item in items_calculados:
             r = item["ramal"]
@@ -288,22 +300,13 @@ def main(page: ft.Page):
             if r == "PRINCIPAL":
                 cfm_para_tramo = cfm_principal_activo
                 cfm_principal_activo -= item["cfm"]
-            
-            elif r == "RAMAL_A":
-                if primer_ramal_a:
-                    cfm_principal_activo -= cfm_ramal_a
-                    primer_ramal_a = False
+            else:
+                if primer_ingreso_ramal[r]:
+                    cfm_principal_activo -= cfm_ramales[r]
+                    primer_ingreso_ramal[r] = False
                 
-                cfm_para_tramo = cfm_a_activo
-                cfm_a_activo -= item["cfm"]
-
-            elif r == "RAMAL_B":
-                if primer_ramal_b:
-                    cfm_principal_activo -= cfm_ramal_b
-                    primer_ramal_b = False
-
-                cfm_para_tramo = cfm_b_activo
-                cfm_b_activo -= item["cfm"]
+                cfm_para_tramo = cfm_ramal_activo[r]
+                cfm_ramal_activo[r] -= item["cfm"]
 
             # Salida Individual
             d_salida_redondo = math.ceil(item["d"])
@@ -331,15 +334,18 @@ def main(page: ft.Page):
                 init_detalles_tramo = f'{int(item["h_d"])*ancho_p} pulg² | {int(cfm_para_tramo)} CFM'
                 init_h_val = str(int(item["h_d"]))
 
-            if r == "PRINCIPAL":
-                lbl_color = ACCENT_GREEN
-                tag = "TRONCO"
-            elif r == "RAMAL_A":
-                lbl_color = ACCENT_ORANGE
-                tag = "RAMAL_A"
-            else:
-                lbl_color = ACCENT_PURPLE
-                tag = "RAMAL_B"
+            # Colores distintivos por ramal
+            color_map = {
+                "PRINCIPAL": ACCENT_GREEN,
+                "RAMAL_A": ACCENT_ORANGE,
+                "RAMAL_B": ACCENT_PURPLE,
+                "RAMAL_C": ACCENT_PINK,
+                "RAMAL_D": ACCENT_TEAL,
+                "RAMAL_E": ACCENT_AMBER
+            }
+
+            lbl_color = color_map.get(r, ACCENT_GREEN)
+            tag = "TRONCO" if r == "PRINCIPAL" else r
 
             lbl_medida_tramo = ft.Text(init_medida_tramo, color=lbl_color, weight=ft.FontWeight.BOLD, size=12)
             lbl_detalles_tramo = ft.Text(f"{init_detalles_tramo} [{tag}]", size=9, color=TEXT_MUTED)
@@ -419,7 +425,6 @@ def main(page: ft.Page):
             bgcolor=BG_CARD, padding=8, border_radius=6
         )
 
-        # Scroll Horizontal Integrado para Celulares
         tabla_scrollable = ft.Row(
             [dt],
             scroll=ft.ScrollMode.ALWAYS
