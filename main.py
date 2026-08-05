@@ -1,3 +1,4 @@
+
 import flet as ft
 import math
 import datetime
@@ -43,12 +44,15 @@ def main(page: ft.Page):
                 high = b
         return math.ceil(low)
 
-    # Campos header
-    txt_proyecto = ft.TextField(label="PROYECTO", hint_text="Ej: Restaurante", border_color=BORDER_COLOR, text_size=13, on_change=lambda e: guardar_estado())
-    txt_cliente = ft.TextField(label="CLIENTE", hint_text="Cliente", border_color=BORDER_COLOR, expand=True, text_size=13, on_change=lambda e: guardar_estado())
-    txt_telefono = ft.TextField(label="TELÉFONO", hint_text="618-123-4567", border_color=BORDER_COLOR, expand=True, text_size=13, on_change=lambda e: guardar_estado())
-    txt_direccion = ft.TextField(label="DIRECCIÓN", hint_text="Punto Guadiana", border_color=BORDER_COLOR, expand=True, text_size=13, on_change=lambda e: guardar_estado())
-    txt_fecha = ft.TextField(label="FECHA", value=datetime.date.today().strftime("%Y-%m-%d"), border_color=BORDER_COLOR, expand=True, text_size=13, on_change=lambda e: guardar_estado())
+    def auto_guardar(e=None):
+        guardar_estado()
+
+    # Campos header con autoguardado activado en on_change
+    txt_proyecto = ft.TextField(label="PROYECTO", hint_text="Ej: Restaurante", border_color=BORDER_COLOR, text_size=13, on_change=auto_guardar)
+    txt_cliente = ft.TextField(label="CLIENTE", hint_text="Cliente", border_color=BORDER_COLOR, expand=True, text_size=13, on_change=auto_guardar)
+    txt_telefono = ft.TextField(label="TELÉFONO", hint_text="618-123-4567", border_color=BORDER_COLOR, expand=True, text_size=13, on_change=auto_guardar)
+    txt_direccion = ft.TextField(label="DIRECCIÓN", hint_text="Punto Guadiana", border_color=BORDER_COLOR, expand=True, text_size=13, on_change=auto_guardar)
+    txt_fecha = ft.TextField(label="FECHA", value=datetime.date.today().strftime("%Y-%m-%d"), border_color=BORDER_COLOR, expand=True, text_size=13, on_change=auto_guardar)
 
     dd_tipo = ft.Dropdown(
         label="TIPO",
@@ -60,7 +64,7 @@ def main(page: ft.Page):
         value="15",
         expand=True
     )
-    dd_tipo.on_change = lambda e: guardar_estado()
+    dd_tipo.on_change = auto_guardar
 
     dd_caida = ft.Dropdown(
         label="CAÍDA",
@@ -72,7 +76,7 @@ def main(page: ft.Page):
         value="0.10",
         expand=True
     )
-    dd_caida.on_change = lambda e: guardar_estado()
+    dd_caida.on_change = auto_guardar
 
     col_areas = ft.Column()
     card_resultado = ft.Container(visible=False, bgcolor=BG_CARD, padding=8, border_radius=10, border=ft.Border.all(1, BORDER_COLOR))
@@ -81,31 +85,32 @@ def main(page: ft.Page):
     areas_list = []
 
     def guardar_estado():
+        """ Guardar todo el estado actual en el almacenamiento local del dispositivo """
         try:
             datos_areas = []
             for item in areas_list:
                 datos_areas.append({
                     "modo": item["modo"],
-                    "nom": item["nom"].value,
-                    "largo": item["largo"].value,
-                    "ancho": item["ancho"].value,
-                    "m2_directo": item["m2_directo"].value,
-                    "alto": item["alto"].value,
-                    "h_ducto": item["h_ducto"].value,
-                    "ramal": item["ramal"].value,
+                    "nom": item["nom"].value or "",
+                    "largo": item["largo"].value or "",
+                    "ancho": item["ancho"].value or "",
+                    "m2_directo": item["m2_directo"].value or "",
+                    "alto": item["alto"].value or "",
+                    "h_ducto": item["h_ducto"].value or "",
+                    "ramal": item["ramal"].value or "PRINCIPAL",
                 })
             
             payload = {
-                "proyecto": txt_proyecto.value,
-                "cliente": txt_cliente.value,
-                "telefono": txt_telefono.value,
-                "direccion": txt_direccion.value,
-                "fecha": txt_fecha.value,
-                "tipo": dd_tipo.value,
-                "caida": dd_caida.value,
+                "proyecto": txt_proyecto.value or "",
+                "cliente": txt_cliente.value or "",
+                "telefono": txt_telefono.value or "",
+                "direccion": txt_direccion.value or "",
+                "fecha": txt_fecha.value or "",
+                "tipo": dd_tipo.value or "15",
+                "caida": dd_caida.value or "0.10",
                 "areas": datos_areas
             }
-            page.client_storage.set("ductulador_draft", json.dumps(payload))
+            page.client_storage.set("ductulador_draft_v8", json.dumps(payload))
         except Exception:
             pass
 
@@ -142,12 +147,12 @@ def main(page: ft.Page):
         val_ramal = data_prev["ramal"] if data_prev else "PRINCIPAL"
         modo_init = data_prev["modo"] if data_prev else "medidas"
 
-        txt_nom = ft.TextField(value=val_nom, border_color=BORDER_COLOR, text_size=13, on_change=lambda e: guardar_estado())
-        txt_largo = ft.TextField(label="LARGO (m)", value=val_largo, hint_text="4", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13, on_change=lambda e: guardar_estado())
-        txt_ancho = ft.TextField(label="ANCHO (m)", value=val_ancho, hint_text="4", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13, on_change=lambda e: guardar_estado())
-        txt_m2_directo = ft.TextField(label="M² DIRECTOS", value=val_m2_dir, hint_text="16", keyboard_type=ft.KeyboardType.NUMBER, border_color=BORDER_COLOR, text_size=13, on_change=lambda e: guardar_estado())
-        txt_alto = ft.TextField(label="ALTURA ÁREA (m)", value=val_alto, keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13, on_change=lambda e: guardar_estado())
-        txt_h_ducto = ft.TextField(label="ALTURA DUCTO (0=cuadrado)", value=val_h_ducto, keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=ACCENT_YELLOW, text_size=13, on_change=lambda e: guardar_estado())
+        txt_nom = ft.TextField(value=val_nom, border_color=BORDER_COLOR, text_size=13, on_change=auto_guardar)
+        txt_largo = ft.TextField(label="LARGO (m)", value=val_largo, hint_text="4", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13, on_change=auto_guardar)
+        txt_ancho = ft.TextField(label="ANCHO (m)", value=val_ancho, hint_text="4", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13, on_change=auto_guardar)
+        txt_m2_directo = ft.TextField(label="M² DIRECTOS", value=val_m2_dir, hint_text="16", keyboard_type=ft.KeyboardType.NUMBER, border_color=BORDER_COLOR, text_size=13, on_change=auto_guardar)
+        txt_alto = ft.TextField(label="ALTURA ÁREA (m)", value=val_alto, keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13, on_change=auto_guardar)
+        txt_h_ducto = ft.TextField(label="ALTURA DUCTO (0=cuadrado)", value=val_h_ducto, keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=ACCENT_YELLOW, text_size=13, on_change=auto_guardar)
 
         dd_ramal = ft.Dropdown(
             label="LÍNEA / RAMAL",
@@ -162,7 +167,7 @@ def main(page: ft.Page):
             value=val_ramal,
             expand=True
         )
-        dd_ramal.on_change = lambda e: guardar_estado()
+        dd_ramal.on_change = auto_guardar
 
         lbl_res_area = ft.Text("", size=12, color=ACCENT_CYAN, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER)
 
@@ -236,8 +241,9 @@ def main(page: ft.Page):
         page.update()
 
     def cargar_estado_guardado():
+        """ Recupera los datos guardados al iniciar la app """
         try:
-            raw = page.client_storage.get("ductulador_draft")
+            raw = page.client_storage.get("ductulador_draft_v8")
             if raw:
                 data = json.loads(raw)
                 txt_proyecto.value = data.get("proyecto", "")
@@ -249,7 +255,7 @@ def main(page: ft.Page):
                 dd_caida.value = data.get("caida", "0.10")
 
                 areas_saved = data.get("areas", [])
-                if areas_saved:
+                if len(areas_saved) > 0:
                     for a in areas_saved:
                         agregar_area(data_prev=a)
                     return True
@@ -275,7 +281,7 @@ def main(page: ft.Page):
             lbl_detalles.value = f'{int(h_val)*ancho} pulg² | {int(cfm_rem)} CFM'
         page.update()
 
-    def calcular_todo(e):
+    def calcular_todo(e=None):
         guardar_estado()
         tipo = float(dd_tipo.value)
         caida = float(dd_caida.value)
@@ -521,7 +527,7 @@ def main(page: ft.Page):
         txt_telefono.value = ""
         txt_direccion.value = ""
         try:
-            page.client_storage.remove("ductulador_draft")
+            page.client_storage.remove("ductulador_draft_v8")
         except Exception:
             pass
         agregar_area()
@@ -567,6 +573,7 @@ def main(page: ft.Page):
         card_resultado
     )
 
+    # Cargar datos persistentes al abrir
     if not cargar_estado_guardado():
         agregar_area()
 
