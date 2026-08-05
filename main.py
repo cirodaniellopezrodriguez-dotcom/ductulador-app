@@ -1,6 +1,7 @@
 import flet as ft
 import math
 import datetime
+import json
 
 def main(page: ft.Page):
     page.title = "DUCTULADOR V8"
@@ -42,11 +43,12 @@ def main(page: ft.Page):
                 high = b
         return math.ceil(low)
 
-    txt_proyecto = ft.TextField(label="PROYECTO", hint_text="Ej: Restaurante", border_color=BORDER_COLOR, text_size=13)
-    txt_cliente = ft.TextField(label="CLIENTE", hint_text="Cliente", border_color=BORDER_COLOR, expand=True, text_size=13)
-    txt_telefono = ft.TextField(label="TELÉFONO", hint_text="618-123-4567", border_color=BORDER_COLOR, expand=True, text_size=13)
-    txt_direccion = ft.TextField(label="DIRECCIÓN", hint_text="Punto Guadiana", border_color=BORDER_COLOR, expand=True, text_size=13)
-    txt_fecha = ft.TextField(label="FECHA", value=datetime.date.today().strftime("%Y-%m-%d"), border_color=BORDER_COLOR, expand=True, text_size=13)
+    # Campos header
+    txt_proyecto = ft.TextField(label="PROYECTO", hint_text="Ej: Restaurante", border_color=BORDER_COLOR, text_size=13, on_change=lambda e: guardar_estado())
+    txt_cliente = ft.TextField(label="CLIENTE", hint_text="Cliente", border_color=BORDER_COLOR, expand=True, text_size=13, on_change=lambda e: guardar_estado())
+    txt_telefono = ft.TextField(label="TELÉFONO", hint_text="618-123-4567", border_color=BORDER_COLOR, expand=True, text_size=13, on_change=lambda e: guardar_estado())
+    txt_direccion = ft.TextField(label="DIRECCIÓN", hint_text="Punto Guadiana", border_color=BORDER_COLOR, expand=True, text_size=13, on_change=lambda e: guardar_estado())
+    txt_fecha = ft.TextField(label="FECHA", value=datetime.date.today().strftime("%Y-%m-%d"), border_color=BORDER_COLOR, expand=True, text_size=13, on_change=lambda e: guardar_estado())
 
     dd_tipo = ft.Dropdown(
         label="TIPO",
@@ -58,6 +60,7 @@ def main(page: ft.Page):
         value="15",
         expand=True
     )
+    dd_tipo.on_change = lambda e: guardar_estado()
 
     dd_caida = ft.Dropdown(
         label="CAÍDA",
@@ -69,12 +72,42 @@ def main(page: ft.Page):
         value="0.10",
         expand=True
     )
+    dd_caida.on_change = lambda e: guardar_estado()
 
     col_areas = ft.Column()
     card_resultado = ft.Container(visible=False, bgcolor=BG_CARD, padding=8, border_radius=10, border=ft.Border.all(1, BORDER_COLOR))
     
     state = {"last_total_cfm": 0, "last_diam_tot": 0}
     areas_list = []
+
+    def guardar_estado():
+        try:
+            datos_areas = []
+            for item in areas_list:
+                datos_areas.append({
+                    "modo": item["modo"],
+                    "nom": item["nom"].value,
+                    "largo": item["largo"].value,
+                    "ancho": item["ancho"].value,
+                    "m2_directo": item["m2_directo"].value,
+                    "alto": item["alto"].value,
+                    "h_ducto": item["h_ducto"].value,
+                    "ramal": item["ramal"].value,
+                })
+            
+            payload = {
+                "proyecto": txt_proyecto.value,
+                "cliente": txt_cliente.value,
+                "telefono": txt_telefono.value,
+                "direccion": txt_direccion.value,
+                "fecha": txt_fecha.value,
+                "tipo": dd_tipo.value,
+                "caida": dd_caida.value,
+                "areas": datos_areas
+            }
+            page.client_storage.set("ductulador_draft", json.dumps(payload))
+        except Exception:
+            pass
 
     def alternar_modo(item, modo):
         item["modo"] = modo
@@ -84,26 +117,37 @@ def main(page: ft.Page):
         item["txt_btn_med"].color = "black" if modo == "medidas" else TEXT_MUTED
         item["btn_m2"].bgcolor = ACCENT_YELLOW if modo == "m2" else BG_CARD
         item["txt_btn_m2"].color = "black" if modo == "m2" else TEXT_MUTED
+        guardar_estado()
         page.update()
 
     def borrar_area(item):
         if item in areas_list:
             areas_list.remove(item)
             col_areas.controls.remove(item["card"])
+            guardar_estado()
             page.update()
 
-    def agregar_area(e=None):
-        if len(areas_list) >= 20:  # Ampliado para más áreas
+    def agregar_area(data_prev=None, e=None):
+        if len(areas_list) >= 20:
             return
 
         idx = len(areas_list) + 1
         
-        txt_nom = ft.TextField(value=f"Area {idx}", border_color=BORDER_COLOR, text_size=13)
-        txt_largo = ft.TextField(label="LARGO (m)", hint_text="4", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13)
-        txt_ancho = ft.TextField(label="ANCHO (m)", hint_text="4", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13)
-        txt_m2_directo = ft.TextField(label="M² DIRECTOS", hint_text="16", keyboard_type=ft.KeyboardType.NUMBER, border_color=BORDER_COLOR, text_size=13)
-        txt_alto = ft.TextField(label="ALTURA ÁREA (m)", value="2.5", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13)
-        txt_h_ducto = ft.TextField(label="ALTURA DUCTO (0=cuadrado)", value="0", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=ACCENT_YELLOW, text_size=13)
+        val_nom = data_prev["nom"] if data_prev else f"Area {idx}"
+        val_largo = data_prev["largo"] if data_prev else ""
+        val_ancho = data_prev["ancho"] if data_prev else ""
+        val_m2_dir = data_prev["m2_directo"] if data_prev else ""
+        val_alto = data_prev["alto"] if data_prev else "2.5"
+        val_h_ducto = data_prev["h_ducto"] if data_prev else "0"
+        val_ramal = data_prev["ramal"] if data_prev else "PRINCIPAL"
+        modo_init = data_prev["modo"] if data_prev else "medidas"
+
+        txt_nom = ft.TextField(value=val_nom, border_color=BORDER_COLOR, text_size=13, on_change=lambda e: guardar_estado())
+        txt_largo = ft.TextField(label="LARGO (m)", value=val_largo, hint_text="4", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13, on_change=lambda e: guardar_estado())
+        txt_ancho = ft.TextField(label="ANCHO (m)", value=val_ancho, hint_text="4", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13, on_change=lambda e: guardar_estado())
+        txt_m2_directo = ft.TextField(label="M² DIRECTOS", value=val_m2_dir, hint_text="16", keyboard_type=ft.KeyboardType.NUMBER, border_color=BORDER_COLOR, text_size=13, on_change=lambda e: guardar_estado())
+        txt_alto = ft.TextField(label="ALTURA ÁREA (m)", value=val_alto, keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13, on_change=lambda e: guardar_estado())
+        txt_h_ducto = ft.TextField(label="ALTURA DUCTO (0=cuadrado)", value=val_h_ducto, keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=ACCENT_YELLOW, text_size=13, on_change=lambda e: guardar_estado())
 
         dd_ramal = ft.Dropdown(
             label="LÍNEA / RAMAL",
@@ -115,29 +159,30 @@ def main(page: ft.Page):
                 ft.dropdown.Option("RAMAL_D", "Ramal Brazo D"),
                 ft.dropdown.Option("RAMAL_E", "Ramal Brazo E"),
             ],
-            value="PRINCIPAL",
+            value=val_ramal,
             expand=True
         )
+        dd_ramal.on_change = lambda e: guardar_estado()
 
         lbl_res_area = ft.Text("", size=12, color=ACCENT_CYAN, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER)
 
-        box_medidas = ft.Row([txt_largo, txt_ancho])
-        box_m2 = ft.Column([txt_m2_directo], visible=False)
+        box_medidas = ft.Row([txt_largo, txt_ancho], visible=(modo_init == "medidas"))
+        box_m2 = ft.Column([txt_m2_directo], visible=(modo_init == "m2"))
 
-        txt_b_med = ft.Text("POR MEDIDAS", color="black", weight=ft.FontWeight.BOLD, size=11, text_align=ft.TextAlign.CENTER)
-        txt_b_m2 = ft.Text("M² DIRECTO", color=TEXT_MUTED, weight=ft.FontWeight.BOLD, size=11, text_align=ft.TextAlign.CENTER)
+        txt_b_med = ft.Text("POR MEDIDAS", color="black" if modo_init == "medidas" else TEXT_MUTED, weight=ft.FontWeight.BOLD, size=11, text_align=ft.TextAlign.CENTER)
+        txt_b_m2 = ft.Text("M² DIRECTO", color="black" if modo_init == "m2" else TEXT_MUTED, weight=ft.FontWeight.BOLD, size=11, text_align=ft.TextAlign.CENTER)
 
         btn_medidas = ft.Container(
             content=ft.Row([txt_b_med], alignment=ft.MainAxisAlignment.CENTER),
-            bgcolor=ACCENT_YELLOW, padding=6, border_radius=6, expand=True, border=ft.Border.all(1, "#475569")
+            bgcolor=ACCENT_YELLOW if modo_init == "medidas" else BG_CARD, padding=6, border_radius=6, expand=True, border=ft.Border.all(1, "#475569")
         )
         btn_m2 = ft.Container(
             content=ft.Row([txt_b_m2], alignment=ft.MainAxisAlignment.CENTER),
-            bgcolor=BG_CARD, padding=6, border_radius=6, expand=True, border=ft.Border.all(1, "#475569")
+            bgcolor=ACCENT_YELLOW if modo_init == "m2" else BG_CARD, padding=6, border_radius=6, expand=True, border=ft.Border.all(1, "#475569")
         )
 
         item = {
-            "modo": "medidas",
+            "modo": modo_init,
             "nom": txt_nom,
             "largo": txt_largo,
             "ancho": txt_ancho,
@@ -185,7 +230,32 @@ def main(page: ft.Page):
         item["card"] = card_area
         areas_list.append(item)
         col_areas.controls.append(card_area)
+        
+        if not data_prev:
+            guardar_estado()
         page.update()
+
+    def cargar_estado_guardado():
+        try:
+            raw = page.client_storage.get("ductulador_draft")
+            if raw:
+                data = json.loads(raw)
+                txt_proyecto.value = data.get("proyecto", "")
+                txt_cliente.value = data.get("cliente", "")
+                txt_telefono.value = data.get("telefono", "")
+                txt_direccion.value = data.get("direccion", "")
+                txt_fecha.value = data.get("fecha", datetime.date.today().strftime("%Y-%m-%d"))
+                dd_tipo.value = data.get("tipo", "15")
+                dd_caida.value = data.get("caida", "0.10")
+
+                areas_saved = data.get("areas", [])
+                if areas_saved:
+                    for a in areas_saved:
+                        agregar_area(data_prev=a)
+                    return True
+        except Exception:
+            pass
+        return False
 
     def actualizar_medida_tramo(txt_h_custom, lbl_medida, lbl_detalles, d_remanente, cfm_rem):
         try:
@@ -206,6 +276,7 @@ def main(page: ft.Page):
         page.update()
 
     def calcular_todo(e):
+        guardar_estado()
         tipo = float(dd_tipo.value)
         caida = float(dd_caida.value)
 
@@ -217,6 +288,7 @@ def main(page: ft.Page):
 
         total_cfm = 0
         total_m2 = 0
+        total_m3 = 0
         total_tr = 0
 
         items_calculados = []
@@ -240,6 +312,7 @@ def main(page: ft.Page):
             except ValueError:
                 alto, h_d = 2.5, 0
 
+            m3 = m2 * alto
             nome = item["nom"].value or "Área"
             ramal_sel = item["ramal"].value or "PRINCIPAL"
             tons_exact = (m2 / tipo) * (alto / 2.7 if alto > 2.7 else 1)
@@ -247,6 +320,7 @@ def main(page: ft.Page):
 
             total_cfm += cfm
             total_m2 += m2
+            total_m3 += m3
             total_tr += tons_exact
 
             d = calc_diam(cfm, caida)
@@ -254,6 +328,7 @@ def main(page: ft.Page):
             items_calculados.append({
                 "nome": nome,
                 "m2": m2,
+                "m3": m3,
                 "tons": tons_exact,
                 "cfm": cfm,
                 "d": d,
@@ -281,7 +356,6 @@ def main(page: ft.Page):
             rows=[]
         )
 
-        # Sumatoria de CFM por cada ramal
         cfm_ramales = {
             "RAMAL_A": sum(x["cfm"] for x in items_calculados if x["ramal"] == "RAMAL_A"),
             "RAMAL_B": sum(x["cfm"] for x in items_calculados if x["ramal"] == "RAMAL_B"),
@@ -334,7 +408,6 @@ def main(page: ft.Page):
                 init_detalles_tramo = f'{int(item["h_d"])*ancho_p} pulg² | {int(cfm_para_tramo)} CFM'
                 init_h_val = str(int(item["h_d"]))
 
-            # Colores distintivos por ramal
             color_map = {
                 "PRINCIPAL": ACCENT_GREEN,
                 "RAMAL_A": ACCENT_ORANGE,
@@ -414,7 +487,7 @@ def main(page: ft.Page):
         barra_totales = ft.Container(
             content=ft.Column([
                 ft.Row([
-                    ft.Text(f"TOTAL: {total_m2:.1f} m²", weight=ft.FontWeight.BOLD, size=11),
+                    ft.Text(f"TOTAL: {total_m2:.1f} m² / {total_m3:.1f} m³", weight=ft.FontWeight.BOLD, size=11),
                     ft.Text(f"{total_tr:.2f} TR", color=ACCENT_CYAN, size=14, weight=ft.FontWeight.BOLD),
                     ft.Text(f"{int(total_cfm)} CFM", color=ACCENT_GREEN, weight=ft.FontWeight.BOLD, size=11)
                 ], alignment=ft.MainAxisAlignment.SPACE_AROUND),
@@ -443,19 +516,27 @@ def main(page: ft.Page):
         col_areas.controls.clear()
         areas_list.clear()
         card_resultado.visible = False
+        txt_proyecto.value = ""
+        txt_cliente.value = ""
+        txt_telefono.value = ""
+        txt_direccion.value = ""
+        try:
+            page.client_storage.remove("ductulador_draft")
+        except Exception:
+            pass
         agregar_area()
         page.update()
 
     btn_add = ft.Container(
         content=ft.Row([ft.Text("+ AGREGAR ÁREA", color="black", weight=ft.FontWeight.BOLD, size=12)], alignment=ft.MainAxisAlignment.CENTER),
-        bgcolor=ACCENT_YELLOW, padding=10, border_radius=8, on_click=agregar_area
+        bgcolor=ACCENT_YELLOW, padding=10, border_radius=8, on_click=lambda e: agregar_area()
     )
     btn_calc = ft.Container(
         content=ft.Row([ft.Text("CALCULAR TODO", color="black", weight=ft.FontWeight.BOLD, size=12)], alignment=ft.MainAxisAlignment.CENTER),
         bgcolor=ACCENT_GREEN, padding=10, border_radius=8, on_click=calcular_todo
     )
     btn_clean = ft.Container(
-        content=ft.Row([ft.Text("LIMPIAR", color="white", weight=ft.FontWeight.BOLD, size=12)], alignment=ft.MainAxisAlignment.CENTER),
+        content=ft.Row([ft.Text("LIMPIAR TODO", color="white", weight=ft.FontWeight.BOLD, size=12)], alignment=ft.MainAxisAlignment.CENTER),
         bgcolor=ACCENT_BLUE, padding=10, border_radius=8, on_click=limpiar
     )
 
@@ -486,6 +567,7 @@ def main(page: ft.Page):
         card_resultado
     )
 
-    agregar_area()
+    if not cargar_estado_guardado():
+        agregar_area()
 
 ft.app(target=main)
