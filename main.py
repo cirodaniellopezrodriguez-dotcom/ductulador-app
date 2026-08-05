@@ -1,10 +1,63 @@
-
 import flet as ft
 import math
 import datetime
 import json
+import sqlite3
+import os
+
+DB_NAME = "ductulador_persist.db"
+
+def init_db():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS estado (
+            id INTEGER PRIMARY KEY,
+            data TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def db_save(data_dict):
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        raw = json.dumps(data_dict)
+        cursor.execute("INSERT OR REPLACE INTO estado (id, data) VALUES (1, ?)", (raw,))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+def db_load():
+    try:
+        if not os.path.exists(DB_NAME):
+            return None
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute("SELECT data FROM estado WHERE id = 1")
+        row = cursor.fetchone()
+        conn.close()
+        if row and row[0]:
+            return json.loads(row[0])
+    except Exception:
+        pass
+    return None
+
+def db_clear():
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM estado WHERE id = 1")
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
 
 def main(page: ft.Page):
+    init_db()
+
     page.title = "DUCTULADOR V8"
     page.scroll = ft.ScrollMode.AUTO
     page.theme_mode = ft.ThemeMode.DARK
@@ -85,34 +138,31 @@ def main(page: ft.Page):
     areas_list = []
 
     def guardar_estado():
-        """ Guardar todo el estado actual en el almacenamiento local del dispositivo """
-        try:
-            datos_areas = []
-            for item in areas_list:
-                datos_areas.append({
-                    "modo": item["modo"],
-                    "nom": item["nom"].value or "",
-                    "largo": item["largo"].value or "",
-                    "ancho": item["ancho"].value or "",
-                    "m2_directo": item["m2_directo"].value or "",
-                    "alto": item["alto"].value or "",
-                    "h_ducto": item["h_ducto"].value or "",
-                    "ramal": item["ramal"].value or "PRINCIPAL",
-                })
-            
-            payload = {
-                "proyecto": txt_proyecto.value or "",
-                "cliente": txt_cliente.value or "",
-                "telefono": txt_telefono.value or "",
-                "direccion": txt_direccion.value or "",
-                "fecha": txt_fecha.value or "",
-                "tipo": dd_tipo.value or "15",
-                "caida": dd_caida.value or "0.10",
-                "areas": datos_areas
-            }
-            page.client_storage.set("ductulador_draft_v8", json.dumps(payload))
-        except Exception:
-            pass
+        """ Guardar el proyecto directamente en la base de datos local SQLite """
+        datos_areas = []
+        for item in areas_list:
+            datos_areas.append({
+                "modo": item["modo"],
+                "nom": item["nom"].value or "",
+                "largo": item["largo"].value or "",
+                "ancho": item["ancho"].value or "",
+                "m2_directo": item["m2_directo"].value or "",
+                "alto": item["alto"].value or "",
+                "h_ducto": item["h_ducto"].value or "",
+                "ramal": item["ramal"].value or "PRINCIPAL",
+            })
+        
+        payload = {
+            "proyecto": txt_proyecto.value or "",
+            "cliente": txt_cliente.value or "",
+            "telefono": txt_telefono.value or "",
+            "direccion": txt_direccion.value or "",
+            "fecha": txt_fecha.value or "",
+            "tipo": dd_tipo.value or "15",
+            "caida": dd_caida.value or "0.10",
+            "areas": datos_areas
+        }
+        db_save(payload)
 
     def alternar_modo(item, modo):
         item["modo"] = modo
@@ -241,26 +291,22 @@ def main(page: ft.Page):
         page.update()
 
     def cargar_estado_guardado():
-        """ Recupera los datos guardados al iniciar la app """
-        try:
-            raw = page.client_storage.get("ductulador_draft_v8")
-            if raw:
-                data = json.loads(raw)
-                txt_proyecto.value = data.get("proyecto", "")
-                txt_cliente.value = data.get("cliente", "")
-                txt_telefono.value = data.get("telefono", "")
-                txt_direccion.value = data.get("direccion", "")
-                txt_fecha.value = data.get("fecha", datetime.date.today().strftime("%Y-%m-%d"))
-                dd_tipo.value = data.get("tipo", "15")
-                dd_caida.value = data.get("caida", "0.10")
+        """ Recupera los datos directamente desde la base de datos local """
+        data = db_load()
+        if data:
+            txt_proyecto.value = data.get("proyecto", "")
+            txt_cliente.value = data.get("cliente", "")
+            txt_telefono.value = data.get("telefono", "")
+            txt_direccion.value = data.get("direccion", "")
+            txt_fecha.value = data.get("fecha", datetime.date.today().strftime("%Y-%m-%d"))
+            dd_tipo.value = data.get("tipo", "15")
+            dd_caida.value = data.get("caida", "0.10")
 
-                areas_saved = data.get("areas", [])
-                if len(areas_saved) > 0:
-                    for a in areas_saved:
-                        agregar_area(data_prev=a)
-                    return True
-        except Exception:
-            pass
+            areas_saved = data.get("areas", [])
+            if len(areas_saved) > 0:
+                for a in areas_saved:
+                    agregar_area(data_prev=a)
+                return True
         return False
 
     def actualizar_medida_tramo(txt_h_custom, lbl_medida, lbl_detalles, d_remanente, cfm_rem):
@@ -526,10 +572,7 @@ def main(page: ft.Page):
         txt_cliente.value = ""
         txt_telefono.value = ""
         txt_direccion.value = ""
-        try:
-            page.client_storage.remove("ductulador_draft_v8")
-        except Exception:
-            pass
+        db_clear()
         agregar_area()
         page.update()
 
