@@ -16,10 +16,19 @@ def init_db():
             data TEXT
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS proyectos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT,
+            cliente TEXT,
+            fecha TEXT,
+            data TEXT
+        )
+    """)
     conn.commit()
     conn.close()
 
-def db_save(data_dict):
+def db_save_draft(data_dict):
     try:
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
@@ -30,7 +39,7 @@ def db_save(data_dict):
     except Exception:
         pass
 
-def db_load():
+def db_load_draft():
     try:
         if not os.path.exists(DB_NAME):
             return None
@@ -45,11 +54,49 @@ def db_load():
         pass
     return None
 
-def db_clear():
+def db_clear_draft():
     try:
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
         cursor.execute("DELETE FROM estado WHERE id = 1")
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+def db_save_project(nombre, cliente, fecha, data_dict):
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        raw = json.dumps(data_dict)
+        cursor.execute("SELECT id FROM proyectos WHERE nombre = ?", (nombre,))
+        row = cursor.fetchone()
+        if row:
+            cursor.execute("UPDATE proyectos SET cliente=?, fecha=?, data=? WHERE id=?", (cliente, fecha, raw, row[0]))
+        else:
+            cursor.execute("INSERT INTO proyectos (nombre, cliente, fecha, data) VALUES (?, ?, ?, ?)", (nombre, cliente, fecha, raw))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+def db_get_projects():
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, nombre, cliente, fecha, data FROM proyectos ORDER BY id DESC")
+        rows = cursor.fetchall()
+        conn.close()
+        return rows
+    except Exception:
+        return []
+
+def db_delete_project(p_id):
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM proyectos WHERE id = ?", (p_id,))
         conn.commit()
         conn.close()
     except Exception:
@@ -100,7 +147,6 @@ def main(page: ft.Page):
     def auto_guardar(e=None):
         guardar_estado()
 
-    # Campos header con autoguardado activado en on_change
     txt_proyecto = ft.TextField(label="PROYECTO", hint_text="Ej: Restaurante", border_color=BORDER_COLOR, text_size=13, on_change=auto_guardar)
     txt_cliente = ft.TextField(label="CLIENTE", hint_text="Cliente", border_color=BORDER_COLOR, expand=True, text_size=13, on_change=auto_guardar)
     txt_telefono = ft.TextField(label="TELÉFONO", hint_text="618-123-4567", border_color=BORDER_COLOR, expand=True, text_size=13, on_change=auto_guardar)
@@ -133,12 +179,12 @@ def main(page: ft.Page):
 
     col_areas = ft.Column()
     card_resultado = ft.Container(visible=False, bgcolor=BG_CARD, padding=8, border_radius=10, border=ft.Border.all(1, BORDER_COLOR))
+    col_proyectos_lista = ft.Column(spacing=10)
     
     state = {"last_total_cfm": 0, "last_diam_tot": 0}
     areas_list = []
 
-    def guardar_estado():
-        """ Guardar el proyecto directamente en la base de datos local SQLite """
+    def obtener_payload():
         datos_areas = []
         for item in areas_list:
             datos_areas.append({
@@ -152,7 +198,7 @@ def main(page: ft.Page):
                 "ramal": item["ramal"].value or "PRINCIPAL",
             })
         
-        payload = {
+        return {
             "proyecto": txt_proyecto.value or "",
             "cliente": txt_cliente.value or "",
             "telefono": txt_telefono.value or "",
@@ -162,7 +208,9 @@ def main(page: ft.Page):
             "caida": dd_caida.value or "0.10",
             "areas": datos_areas
         }
-        db_save(payload)
+
+    def guardar_estado():
+        db_save_draft(obtener_payload())
 
     def alternar_modo(item, modo):
         item["modo"] = modo
@@ -290,23 +338,31 @@ def main(page: ft.Page):
             guardar_estado()
         page.update()
 
-    def cargar_estado_guardado():
-        """ Recupera los datos directamente desde la base de datos local """
-        data = db_load()
-        if data:
-            txt_proyecto.value = data.get("proyecto", "")
-            txt_cliente.value = data.get("cliente", "")
-            txt_telefono.value = data.get("telefono", "")
-            txt_direccion.value = data.get("direccion", "")
-            txt_fecha.value = data.get("fecha", datetime.date.today().strftime("%Y-%m-%d"))
-            dd_tipo.value = data.get("tipo", "15")
-            dd_caida.value = data.get("caida", "0.10")
+    def cargar_datos_en_formulario(data):
+        col_areas.controls.clear()
+        areas_list.clear()
 
-            areas_saved = data.get("areas", [])
-            if len(areas_saved) > 0:
-                for a in areas_saved:
-                    agregar_area(data_prev=a)
-                return True
+        txt_proyecto.value = data.get("proyecto", "")
+        txt_cliente.value = data.get("cliente", "")
+        txt_telefono.value = data.get("telefono", "")
+        txt_direccion.value = data.get("direccion", "")
+        txt_fecha.value = data.get("fecha", datetime.date.today().strftime("%Y-%m-%d"))
+        dd_tipo.value = data.get("tipo", "15")
+        dd_caida.value = data.get("caida", "0.10")
+
+        areas_saved = data.get("areas", [])
+        if len(areas_saved) > 0:
+            for a in areas_saved:
+                agregar_area(data_prev=a)
+        else:
+            agregar_area()
+        page.update()
+
+    def cargar_estado_guardado():
+        data = db_load_draft()
+        if data:
+            cargar_datos_en_formulario(data)
+            return True
         return False
 
     def actualizar_medida_tramo(txt_h_custom, lbl_medida, lbl_detalles, d_remanente, cfm_rem):
@@ -507,6 +563,22 @@ def main(page: ft.Page):
                 ])
             )
 
+        # Fila final de TOTALES alineada a las columnas de la tabla
+        total_btu = total_tr * 12000
+        dt.rows.append(
+            ft.DataRow(
+                color="#0f172a",
+                cells=[
+                    ft.DataCell(ft.Text("TOTALES", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=11)),
+                    ft.DataCell(ft.Text(f"{total_m2:.1f} m² / {total_m3:.1f} m³", color="white", weight=ft.FontWeight.BOLD, size=10)),
+                    ft.DataCell(ft.Text(f"{total_tr:.2f} TR", color=ACCENT_CYAN, weight=ft.FontWeight.BOLD, size=11)),
+                    ft.DataCell(ft.Text(f"{int(total_cfm)} CFM", color=ACCENT_GREEN, weight=ft.FontWeight.BOLD, size=11)),
+                    ft.DataCell(ft.Text("CAPACIDAD TÉRMICA:", color=TEXT_MUTED, weight=ft.FontWeight.BOLD, size=10)),
+                    ft.DataCell(ft.Text(f"{total_btu:,.0f} BTU/h", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=11)),
+                ]
+            )
+        )
+
         state["last_total_cfm"] = total_cfm
         state["last_diam_tot"] = calc_diam(total_cfm, caida)
         lado_prin = lado_cuadrado(state["last_diam_tot"])
@@ -534,22 +606,6 @@ def main(page: ft.Page):
             bgcolor=ACCENT_YELLOW, padding=8, border_radius=6
         )
 
-        total_btu = total_tr * 12000
-
-        barra_totales = ft.Container(
-            content=ft.Column([
-                ft.Row([
-                    ft.Text(f"TOTAL: {total_m2:.1f} m² / {total_m3:.1f} m³", weight=ft.FontWeight.BOLD, size=11),
-                    ft.Text(f"{total_tr:.2f} TR", color=ACCENT_CYAN, size=14, weight=ft.FontWeight.BOLD),
-                    ft.Text(f"{int(total_cfm)} CFM", color=ACCENT_GREEN, weight=ft.FontWeight.BOLD, size=11)
-                ], alignment=ft.MainAxisAlignment.SPACE_AROUND),
-                ft.Row([
-                    ft.Text(f"CAPACIDAD TÉRMICA: {total_btu:,.0f} BTU/h", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=11)
-                ], alignment=ft.MainAxisAlignment.CENTER)
-            ]),
-            bgcolor=BG_CARD, padding=8, border_radius=6
-        )
-
         tabla_scrollable = ft.Row(
             [dt],
             scroll=ft.ScrollMode.ALWAYS
@@ -558,10 +614,74 @@ def main(page: ft.Page):
         card_resultado.content = ft.Column([
             header_resumen,
             tabla_scrollable,
-            barra_totales,
             box_principal
         ], spacing=10)
         card_resultado.visible = True
+        page.update()
+
+    def guardar_proyecto_click(e=None):
+        p_nombre = txt_proyecto.value.strip()
+        if not p_nombre:
+            txt_proyecto.border_color = "#ef4444"
+            page.update()
+            return
+        
+        txt_proyecto.border_color = BORDER_COLOR
+        payload = obtener_payload()
+        db_save_project(p_nombre, txt_cliente.value or "---", txt_fecha.value or "", payload)
+        
+        refrescar_lista_proyectos()
+        cambiar_vista("historial")
+
+    def cargar_proyecto_desde_db(p_data):
+        cargar_datos_en_formulario(p_data)
+        calcular_todo()
+        cambiar_vista("calculadora")
+
+    def eliminar_proyecto_click(p_id):
+        db_delete_project(p_id)
+        refrescar_lista_proyectos()
+
+    def refrescar_lista_proyectos():
+        col_proyectos_lista.controls.clear()
+        proyectos = db_get_projects()
+
+        if not proyectos:
+            col_proyectos_lista.controls.append(
+                ft.Container(
+                    content=ft.Text("No hay proyectos guardados aún.", color=TEXT_MUTED, size=13),
+                    padding=20, alignment=ft.alignment.center
+                )
+            )
+        else:
+            for p_id, p_nom, p_cli, p_fec, p_data_str in proyectos:
+                p_data = json.loads(p_data_str) if p_data_str else {}
+                num_areas = len(p_data.get("areas", []))
+
+                btn_cargar = ft.Container(
+                    content=ft.Text("ABRIR / CORREGIR", color="black", weight=ft.FontWeight.BOLD, size=11),
+                    bgcolor=ACCENT_YELLOW, padding=6, border_radius=6,
+                    on_click=lambda _, data=p_data: cargar_proyecto_desde_db(data)
+                )
+
+                btn_eliminar = ft.Container(
+                    content=ft.Text("ELIMINAR", color="#ef4444", weight=ft.FontWeight.BOLD, size=11),
+                    padding=6,
+                    on_click=lambda _, pid=p_id: eliminar_proyecto_click(pid)
+                )
+
+                card_p = ft.Container(
+                    content=ft.Column([
+                        ft.Row([
+                            ft.Text(p_nom.upper(), weight=ft.FontWeight.BOLD, color=ACCENT_CYAN, size=14),
+                            ft.Text(p_fec, size=11, color=TEXT_MUTED)
+                        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                        ft.Text(f"Cliente: {p_cli} | Áreas calculadas: {num_areas}", size=12, color="white"),
+                        ft.Row([btn_cargar, btn_eliminar], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+                    ], spacing=6),
+                    bgcolor=BG_DARK, padding=12, border_radius=8, border=ft.Border.all(1, BORDER_COLOR)
+                )
+                col_proyectos_lista.controls.append(card_p)
         page.update()
 
     def limpiar(e=None):
@@ -572,10 +692,11 @@ def main(page: ft.Page):
         txt_cliente.value = ""
         txt_telefono.value = ""
         txt_direccion.value = ""
-        db_clear()
+        db_clear_draft()
         agregar_area()
         page.update()
 
+    # Contenedores de las vistas
     btn_add = ft.Container(
         content=ft.Row([ft.Text("+ AGREGAR ÁREA", color="black", weight=ft.FontWeight.BOLD, size=12)], alignment=ft.MainAxisAlignment.CENTER),
         bgcolor=ACCENT_YELLOW, padding=10, border_radius=8, on_click=lambda e: agregar_area()
@@ -584,17 +705,16 @@ def main(page: ft.Page):
         content=ft.Row([ft.Text("CALCULAR TODO", color="black", weight=ft.FontWeight.BOLD, size=12)], alignment=ft.MainAxisAlignment.CENTER),
         bgcolor=ACCENT_GREEN, padding=10, border_radius=8, on_click=calcular_todo
     )
+    btn_guardar_proy = ft.Container(
+        content=ft.Row([ft.Text("GUARDAR PROYECTO", color="black", weight=ft.FontWeight.BOLD, size=12)], alignment=ft.MainAxisAlignment.CENTER),
+        bgcolor=ACCENT_CYAN, padding=10, border_radius=8, on_click=guardar_proyecto_click
+    )
     btn_clean = ft.Container(
         content=ft.Row([ft.Text("LIMPIAR TODO", color="white", weight=ft.FontWeight.BOLD, size=12)], alignment=ft.MainAxisAlignment.CENTER),
         bgcolor=ACCENT_BLUE, padding=10, border_radius=8, on_click=limpiar
     )
 
-    page.add(
-        ft.Column([
-            ft.Text("DUCTULADOR V8", size=18, weight=ft.FontWeight.BOLD, color="white"),
-            ft.Text("FLUJO ACUMULATIVO Y RAMIFICACIONES", size=10, color=ACCENT_GREEN, weight=ft.FontWeight.BOLD)
-        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-        
+    vista_calculadora = ft.Column([
         ft.Container(
             content=ft.Column([
                 ft.Text("DATOS DEL PROYECTO", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=12),
@@ -605,18 +725,66 @@ def main(page: ft.Page):
             ], spacing=8),
             bgcolor=BG_CARD, padding=10, border_radius=10, border=ft.Border.all(1, ACCENT_YELLOW)
         ),
-        
         col_areas,
-        
         ft.Container(
-            content=ft.Column([btn_add, btn_calc, btn_clean], spacing=8),
+            content=ft.Column([btn_add, btn_calc, btn_guardar_proy, btn_clean], spacing=8),
             bgcolor=BG_CARD, padding=10, border_radius=10, border=ft.Border.all(1, BORDER_COLOR)
         ),
-        
         card_resultado
+    ], spacing=10, visible=True)
+
+    vista_historial = ft.Column([
+        ft.Text("PROYECTOS Y CÁLCULOS GUARDADOS", size=14, weight=ft.FontWeight.BOLD, color=ACCENT_YELLOW),
+        ft.Text("Selecciona un proyecto para abrirlo, corregirlo o modificar sus ductos.", size=11, color=TEXT_MUTED),
+        col_proyectos_lista
+    ], spacing=10, visible=False)
+
+    txt_nav_calc = ft.Text("CALCULADORA", color="black", weight=ft.FontWeight.BOLD, size=12)
+    txt_nav_hist = ft.Text("HISTORIAL PROYECTOS", color=TEXT_MUTED, weight=ft.FontWeight.BOLD, size=12)
+
+    btn_tab_calc = ft.Container(
+        content=ft.Row([txt_nav_calc], alignment=ft.MainAxisAlignment.CENTER),
+        bgcolor=ACCENT_YELLOW, padding=10, border_radius=8, expand=True
     )
 
-    # Cargar datos persistentes al abrir
+    btn_tab_hist = ft.Container(
+        content=ft.Row([txt_nav_hist], alignment=ft.MainAxisAlignment.CENTER),
+        bgcolor=BG_CARD, padding=10, border_radius=8, expand=True
+    )
+
+    def cambiar_vista(vista_destino):
+        if vista_destino == "calculadora":
+            vista_calculadora.visible = True
+            vista_historial.visible = False
+            btn_tab_calc.bgcolor = ACCENT_YELLOW
+            txt_nav_calc.color = "black"
+            btn_tab_hist.bgcolor = BG_CARD
+            txt_nav_hist.color = TEXT_MUTED
+        else:
+            vista_calculadora.visible = False
+            vista_historial.visible = True
+            btn_tab_calc.bgcolor = BG_CARD
+            txt_nav_calc.color = TEXT_MUTED
+            btn_tab_hist.bgcolor = ACCENT_YELLOW
+            txt_nav_hist.color = "black"
+            refrescar_lista_proyectos()
+        page.update()
+
+    btn_tab_calc.on_click = lambda _: cambiar_vista("calculadora")
+    btn_tab_hist.on_click = lambda _: cambiar_vista("historial")
+
+    bar_navegacion = ft.Row([btn_tab_calc, btn_tab_hist])
+
+    page.add(
+        ft.Column([
+            ft.Text("DUCTULADOR V8", size=18, weight=ft.FontWeight.BOLD, color="white"),
+            ft.Text("FLUJO ACUMULATIVO Y GESTIÓN DE PROYECTOS", size=10, color=ACCENT_GREEN, weight=ft.FontWeight.BOLD)
+        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+        bar_navegacion,
+        vista_calculadora,
+        vista_historial
+    )
+
     if not cargar_estado_guardado():
         agregar_area()
 
