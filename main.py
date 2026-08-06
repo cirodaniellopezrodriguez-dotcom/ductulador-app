@@ -160,7 +160,7 @@ def main(page: ft.Page):
             ft.dropdown.Option("15", "Comercio 15m²/T"),
             ft.dropdown.Option("12", "Caliente 12m²/T"),
         ],
-        value="15",
+        value="18",
         expand=True
     )
     dd_tipo.on_change = auto_guardar
@@ -204,7 +204,7 @@ def main(page: ft.Page):
             "telefono": txt_telefono.value or "",
             "direccion": txt_direccion.value or "",
             "fecha": txt_fecha.value or "",
-            "tipo": dd_tipo.value or "15",
+            "tipo": dd_tipo.value or "18",
             "caida": dd_caida.value or "0.10",
             "areas": datos_areas
         }
@@ -240,16 +240,16 @@ def main(page: ft.Page):
         val_largo = data_prev["largo"] if data_prev else ""
         val_ancho = data_prev["ancho"] if data_prev else ""
         val_m2_dir = data_prev["m2_directo"] if data_prev else ""
-        val_alto = data_prev["alto"] if data_prev else "2.5"
+        val_alto = data_prev["alto"] if data_prev else ""
         val_h_ducto = data_prev["h_ducto"] if data_prev else "0"
         val_ramal = data_prev["ramal"] if data_prev else "PRINCIPAL"
         modo_init = data_prev["modo"] if data_prev else "medidas"
 
         txt_nom = ft.TextField(value=val_nom, border_color=BORDER_COLOR, text_size=13, on_change=auto_guardar)
-        txt_largo = ft.TextField(label="LARGO (m)", value=val_largo, hint_text="4", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13, on_change=auto_guardar)
-        txt_ancho = ft.TextField(label="ANCHO (m)", value=val_ancho, hint_text="4", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13, on_change=auto_guardar)
-        txt_m2_directo = ft.TextField(label="M² DIRECTOS", value=val_m2_dir, hint_text="16", keyboard_type=ft.KeyboardType.NUMBER, border_color=BORDER_COLOR, text_size=13, on_change=auto_guardar)
-        txt_alto = ft.TextField(label="ALTURA ÁREA (m)", value=val_alto, keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13, on_change=auto_guardar)
+        txt_largo = ft.TextField(label="LARGO (m)", value=val_largo, hint_text="0", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13, on_change=auto_guardar)
+        txt_ancho = ft.TextField(label="ANCHO (m)", value=val_ancho, hint_text="0", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13, on_change=auto_guardar)
+        txt_m2_directo = ft.TextField(label="M² DIRECTOS", value=val_m2_dir, hint_text="0", keyboard_type=ft.KeyboardType.NUMBER, border_color=BORDER_COLOR, text_size=13, on_change=auto_guardar)
+        txt_alto = ft.TextField(label="ALTURA ÁREA (m)", value=val_alto, hint_text="0", keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=BORDER_COLOR, text_size=13, on_change=auto_guardar)
         txt_h_ducto = ft.TextField(label="ALTURA DUCTO (0=cuadrado)", value=val_h_ducto, keyboard_type=ft.KeyboardType.NUMBER, expand=True, border_color=ACCENT_YELLOW, text_size=13, on_change=auto_guardar)
 
         dd_ramal = ft.Dropdown(
@@ -347,7 +347,7 @@ def main(page: ft.Page):
         txt_telefono.value = data.get("telefono", "")
         txt_direccion.value = data.get("direccion", "")
         txt_fecha.value = data.get("fecha", datetime.date.today().strftime("%Y-%m-%d"))
-        dd_tipo.value = data.get("tipo", "15")
+        dd_tipo.value = data.get("tipo", "18")
         dd_caida.value = data.get("caida", "0.10")
 
         areas_saved = data.get("areas", [])
@@ -371,7 +371,7 @@ def main(page: ft.Page):
         except ValueError:
             h_val = 0
 
-        d_tramo_redondo = math.ceil(d_remanente)
+        d_tramo_redondo = f"{d_remanente:.1f}"
 
         if h_val <= 0:
             lado = lado_cuadrado(d_remanente)
@@ -385,8 +385,8 @@ def main(page: ft.Page):
 
     def calcular_todo(e=None):
         guardar_estado()
-        tipo = float(dd_tipo.value)
-        caida = float(dd_caida.value)
+        tipo = float(dd_tipo.value or 18)
+        caida = float(dd_caida.value or 0.10)
 
         proy = (txt_proyecto.value or "SIN NOMBRE").upper()
         cli = txt_cliente.value or "---"
@@ -490,8 +490,7 @@ def main(page: ft.Page):
                 cfm_para_tramo = cfm_ramal_activo[r]
                 cfm_ramal_activo[r] -= item["cfm"]
 
-            # Salida Individual
-            d_salida_redondo = math.ceil(item["d"])
+            d_salida_redondo = f"{item['d']:.1f}"
             if item["h_d"] == 0:
                 lado = lado_cuadrado(item["d"])
                 propuesta_salida = f'{lado}"x{lado}"  |  {d_salida_redondo}" Ø'
@@ -501,9 +500,8 @@ def main(page: ft.Page):
                 propuesta_salida = f'{int(item["h_d"])}"x{ancho}"  |  {d_salida_redondo}" Ø'
                 pulg2_salida = int(item["h_d"]) * ancho
 
-            # Ducto del Tramo
             d_remanente = calc_diam(cfm_para_tramo, caida)
-            d_tramo_redondo = math.ceil(d_remanente)
+            d_tramo_redondo = f"{d_remanente:.1f}"
             
             if item["h_d"] == 0:
                 lado_p = lado_cuadrado(d_remanente)
@@ -563,7 +561,6 @@ def main(page: ft.Page):
                 ])
             )
 
-        # Fila final de TOTALES alineada a las columnas de la tabla
         total_btu = total_tr * 12000
         dt.rows.append(
             ft.DataRow(
@@ -582,7 +579,7 @@ def main(page: ft.Page):
         state["last_total_cfm"] = total_cfm
         state["last_diam_tot"] = calc_diam(total_cfm, caida)
         lado_prin = lado_cuadrado(state["last_diam_tot"])
-        d_principal_redondo = math.ceil(state["last_diam_tot"])
+        d_principal_redondo = f"{state['last_diam_tot']:.1f}"
 
         box_principal = ft.Container(
             content=ft.Column([
@@ -649,8 +646,11 @@ def main(page: ft.Page):
         if not proyectos:
             col_proyectos_lista.controls.append(
                 ft.Container(
-                    content=ft.Text("No hay proyectos guardados aún.", color=TEXT_MUTED, size=13),
-                    padding=20, alignment=ft.alignment.center
+                    content=ft.Row(
+                        [ft.Text("No hay proyectos guardados aún.", color=TEXT_MUTED, size=13)],
+                        alignment=ft.MainAxisAlignment.CENTER
+                    ),
+                    padding=20
                 )
             )
         else:
@@ -692,11 +692,13 @@ def main(page: ft.Page):
         txt_cliente.value = ""
         txt_telefono.value = ""
         txt_direccion.value = ""
+        txt_fecha.value = datetime.date.today().strftime("%Y-%m-%d")
+        dd_tipo.value = "18"
+        dd_caida.value = "0.10"
         db_clear_draft()
         agregar_area()
         page.update()
 
-    # Contenedores de las vistas
     btn_add = ft.Container(
         content=ft.Row([ft.Text("+ AGREGAR ÁREA", color="black", weight=ft.FontWeight.BOLD, size=12)], alignment=ft.MainAxisAlignment.CENTER),
         bgcolor=ACCENT_YELLOW, padding=10, border_radius=8, on_click=lambda e: agregar_area()
@@ -710,7 +712,7 @@ def main(page: ft.Page):
         bgcolor=ACCENT_CYAN, padding=10, border_radius=8, on_click=guardar_proyecto_click
     )
     btn_clean = ft.Container(
-        content=ft.Row([ft.Text("LIMPIAR TODO", color="white", weight=ft.FontWeight.BOLD, size=12)], alignment=ft.MainAxisAlignment.CENTER),
+        content=ft.Row([ft.Text("NUEVO / LIMPIAR TODO", color="white", weight=ft.FontWeight.BOLD, size=12)], alignment=ft.MainAxisAlignment.CENTER),
         bgcolor=ACCENT_BLUE, padding=10, border_radius=8, on_click=limpiar
     )
 
@@ -764,7 +766,7 @@ def main(page: ft.Page):
             vista_calculadora.visible = False
             vista_historial.visible = True
             btn_tab_calc.bgcolor = BG_CARD
-            txt_nav_calc.color = TEXT_MUTED
+            txt_nav_hist.color = TEXT_MUTED
             btn_tab_hist.bgcolor = ACCENT_YELLOW
             txt_nav_hist.color = "black"
             refrescar_lista_proyectos()
@@ -786,6 +788,7 @@ def main(page: ft.Page):
     )
 
     if not cargar_estado_guardado():
+        dd_tipo.value = "18"
         agregar_area()
 
 ft.app(target=main)
