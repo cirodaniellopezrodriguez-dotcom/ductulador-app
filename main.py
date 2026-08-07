@@ -365,11 +365,15 @@ def main(page: ft.Page):
             return True
         return False
 
-    def actualizar_medida_tramo(txt_h_custom, lbl_medida, lbl_detalles, d_remanente, cfm_rem):
+    def actualizar_medida_tramo(txt_h_custom, lbl_medida, lbl_detalles, d_remanente, cfm_rem, item_ref=None):
         try:
             h_val = float(txt_h_custom.value or 0)
         except ValueError:
             h_val = 0
+
+        # Sincronizar el cambio con la variable del área para que persista en el guardado
+        if item_ref:
+            item_ref["h_ducto"].value = txt_h_custom.value or "0"
 
         d_tramo_redondo = f"{d_remanente:.1f}"
 
@@ -381,6 +385,8 @@ def main(page: ft.Page):
             ancho = ancho_rect(d_remanente, h_val)
             lbl_medida.value = f'{int(h_val)}"x{ancho}"  |  {d_tramo_redondo}" Ø'
             lbl_detalles.value = f'{int(h_val)*ancho} pulg² | {int(cfm_rem)} CFM'
+
+        auto_guardar()
         page.update()
 
     def calcular_todo(e=None):
@@ -434,6 +440,7 @@ def main(page: ft.Page):
             d = calc_diam(cfm, caida)
 
             items_calculados.append({
+                "item_ref": item,
                 "nome": nome,
                 "m2": m2,
                 "m3": m3,
@@ -540,7 +547,7 @@ def main(page: ft.Page):
                 text_align=ft.TextAlign.CENTER
             )
 
-            txt_h_tramo_custom.on_change = lambda e, txt=txt_h_tramo_custom, lbl_m=lbl_medida_tramo, lbl_d=lbl_detalles_tramo, d_r=d_remanente, cfm_r=cfm_para_tramo: actualizar_medida_tramo(txt, lbl_m, lbl_d, d_r, cfm_r)
+            txt_h_tramo_custom.on_change = lambda e, txt=txt_h_tramo_custom, lbl_m=lbl_medida_tramo, lbl_d=lbl_detalles_tramo, d_r=d_remanente, cfm_r=cfm_para_tramo, ref=item["item_ref"]: actualizar_medida_tramo(txt, lbl_m, lbl_d, d_r, cfm_r, ref)
 
             nombre_con_tag = f"{item['nome']} [{tag}]" if r != "PRINCIPAL" else item['nome']
 
