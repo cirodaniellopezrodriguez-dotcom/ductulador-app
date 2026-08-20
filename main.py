@@ -999,6 +999,26 @@ def main(page: ft.Page):
             border=ft.Border.all(width=1, color="#334155"),
         )
 
+      # Aviso fijo de Presión Positiva bien visible
+      aviso_presion_positiva = ft.Container(
+          content=ft.Row(
+              [
+                  ft.Text(
+                      "ℹ️ PRESIÓN POSITIVA: Mantener inyección de aire 10% a"
+                      " 20% superior al caudal de extracción.",
+                      size=11,
+                      color=ACCENT_CYAN,
+                      weight=ft.FontWeight.BOLD,
+                  )
+              ],
+              alignment=ft.MainAxisAlignment.CENTER,
+          ),
+          bgcolor=BG_CARD,
+          padding=10,
+          border_radius=6,
+          border=ft.Border.all(width=1, color=ACCENT_CYAN),
+      )
+
       box_principal = ft.Container(
           content=ft.Column(
               [
@@ -1009,6 +1029,7 @@ def main(page: ft.Page):
                       weight=ft.FontWeight.BOLD,
                       size=11,
                   ),
+                  aviso_presion_positiva,
                   crear_caja_hospital_ajustable(
                       "1. DUCTO GENERAL TOTAL (20 Cambios):",
                       total_cfm,
@@ -1034,7 +1055,7 @@ def main(page: ft.Page):
                       "h3",
                   ),
               ],
-              spacing=6,
+              spacing=8,
           ),
           bgcolor=BG_DARK,
           padding=12,
@@ -1198,7 +1219,6 @@ def main(page: ft.Page):
     state.update({"h1": "0", "h2": "0", "h3": "0"})
     page.update()
 
-  # Textos de pestañas con color dinámico para resaltar
   txt_tab_calc = ft.Text(
       "CALCULADORA",
       color="black",
@@ -1210,18 +1230,14 @@ def main(page: ft.Page):
   )
 
   btn_tab_calc = ft.Container(
-      content=ft.Row(
-          [txt_tab_calc], alignment=ft.MainAxisAlignment.CENTER
-      ),
+      content=ft.Row([txt_tab_calc], alignment=ft.MainAxisAlignment.CENTER),
       bgcolor=ACCENT_YELLOW,
       padding=18,
       border_radius=8,
       expand=True,
   )
   btn_tab_hist = ft.Container(
-      content=ft.Row(
-          [txt_tab_hist], alignment=ft.MainAxisAlignment.CENTER
-      ),
+      content=ft.Row([txt_tab_hist], alignment=ft.MainAxisAlignment.CENTER),
       bgcolor=BG_CARD,
       padding=18,
       border_radius=8,
@@ -1232,7 +1248,6 @@ def main(page: ft.Page):
     vista_calculadora.visible = v == "calculadora"
     vista_historial.visible = v == "historial"
 
-    # Actualizar color de fondo y color de letras para que resalten perfectamente
     if v == "calculadora":
       btn_tab_calc.bgcolor = ACCENT_YELLOW
       txt_tab_calc.color = "black"
