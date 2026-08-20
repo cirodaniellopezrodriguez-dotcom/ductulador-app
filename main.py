@@ -127,6 +127,7 @@ def main(page: ft.Page):
       "#3b82f6",
   )
   TEXT_MUTED = "#94a3b8"
+  WHITE = "#ffffff"
 
   state = {"h1_val": "0", "h2_val": "0", "h3_val": "0"}
   areas_list = []
@@ -999,22 +1000,28 @@ def main(page: ft.Page):
             border=ft.Border.all(width=1, color="#334155"),
         )
 
-      # Aviso fijo de Presión Positiva bien visible
+      # --- AVISO ADAPTADO PARA CELULAR ---
       aviso_presion_positiva = ft.Container(
-          content=ft.Row(
+          content=ft.Column(
               [
                   ft.Text(
-                      "ℹ️ PRESIÓN POSITIVA: Mantener inyección de aire 10% a"
-                      " 20% superior al caudal de extracción.",
+                      "ℹ️ PRESIÓN POSITIVA",
                       size=11,
                       color=ACCENT_CYAN,
                       weight=ft.FontWeight.BOLD,
-                  )
+                  ),
+                  ft.Text(
+                      "Mantener inyección de aire 10% a 20% superior al caudal de extracción.",
+                      size=10,
+                      color=WHITE,
+                      text_align=ft.TextAlign.CENTER,
+                  ),
               ],
-              alignment=ft.MainAxisAlignment.CENTER,
+              horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+              spacing=2,
           ),
           bgcolor=BG_CARD,
-          padding=10,
+          padding=8,
           border_radius=6,
           border=ft.Border.all(width=1, color=ACCENT_CYAN),
       )
