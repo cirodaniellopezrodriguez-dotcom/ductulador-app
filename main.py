@@ -78,8 +78,7 @@ def db_save_project(nombre, cliente, fecha, data_dict):
     )
   else:
     cursor.execute(
-        "INSERT INTO proyectos (nombre, cliente, fecha, data) VALUES (?, ?, ?,"
-        " ?)",
+        "INSERT INTO proyectos (nombre, cliente, fecha, data) VALUES (?, ?, ?, ?)",
         (nombre, cliente, fecha, raw),
     )
   conn.commit()
@@ -606,21 +605,25 @@ def main(page: ft.Page):
                 "ÁREA",
                 color=ACCENT_YELLOW,
                 weight=ft.FontWeight.BOLD,
-                size=11,
+                size=12,
             )
         ),
         ft.DataColumn(
-            ft.Text("M²", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=11)
+            ft.Text(
+                "M²", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=12
+            )
         ),
         ft.DataColumn(
-            ft.Text("TR", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=11)
+            ft.Text(
+                "TR", color=ACCENT_YELLOW, weight=ft.FontWeight.BOLD, size=12
+            )
         ),
         ft.DataColumn(
             ft.Text(
                 "CFM / AIRE NUEVO",
                 color=ACCENT_YELLOW,
                 weight=ft.FontWeight.BOLD,
-                size=11,
+                size=12,
             )
         ),
         ft.DataColumn(
@@ -628,22 +631,10 @@ def main(page: ft.Page):
                 "TRAMO DUCTO (EDITABLE)",
                 color=ACCENT_GREEN,
                 weight=ft.FontWeight.BOLD,
-                size=11,
+                size=12,
             )
         ),
     ]
-
-    if tipo_val == "QUIROFANO":
-      columnas_tabla.append(
-          ft.DataColumn(
-              ft.Text(
-                  "SALIDA Y CAJA (PLENUM)",
-                  color=ACCENT_YELLOW,
-                  weight=ft.FontWeight.BOLD,
-                  size=11,
-              )
-          )
-      )
 
     dt = ft.DataTable(
         column_spacing=14,
@@ -689,28 +680,6 @@ def main(page: ft.Page):
         cfm_para_tramo = cfm_ramal_activo[r]
         cfm_ramal_activo[r] -= item["cfm"]
 
-      d_salida_redondo = f"{item['d']:.1f}"
-      if item["h_d"] == 0:
-        lado = lado_cuadrado(item["d"])
-        propuesta_salida = f'{lado}"x{lado}"  |  {d_salida_redondo}" Ø'
-        pulg2_salida = lado * lado
-      else:
-        ancho = ancho_rect(item["d"], item["h_d"])
-        propuesta_salida = f'{int(item["h_d"])}"x{ancho}"  |  {d_salida_redondo}" Ø'
-        pulg2_salida = int(item["h_d"]) * ancho
-
-      cuello_plenum_diam = math.sqrt((item["cfm"] / 500.0) * 183.35)
-      cuello_lado = lado_cuadrado(cuello_plenum_diam)
-
-      radio_cuello = cuello_plenum_diam / 2.0
-      pulg2_cuello_redondo = math.pi * (radio_cuello**2)
-
-      lado_caja_plenum = cuello_lado + 4
-      caja_plenum_str = (
-          f'Caja Plenum: {lado_caja_plenum}"x{lado_caja_plenum}" | Cuello'
-          f' {cuello_lado}"Ø ({pulg2_cuello_redondo:.1f} pulg²)'
-      )
-
       d_remanente = calc_diam(cfm_para_tramo, caida)
       d_tramo_redondo = f"{d_remanente:.1f}"
 
@@ -725,7 +694,7 @@ def main(page: ft.Page):
             f'{int(item["h_d"])}"x{ancho_p}"  |  {d_tramo_redondo}" Ø'
         )
         init_detalles_tramo = (
-            f"{int(item["h_d"])*ancho_p} pulg² | {int(cfm_para_tramo)} CFM"
+            f"{int(item['h_d'])*ancho_p} pulg² | {int(cfm_para_tramo)} CFM"
         )
         init_h_val = str(int(item["h_d"]))
 
@@ -744,18 +713,18 @@ def main(page: ft.Page):
           init_medida_tramo,
           color=lbl_color,
           weight=ft.FontWeight.BOLD,
-          size=12,
+          size=13,
       )
       lbl_detalles_tramo = ft.Text(
-          f"{init_detalles_tramo} [{tag}]", size=9, color=TEXT_MUTED
+          f"{init_detalles_tramo} [{tag}]", size=10, color=TEXT_MUTED
       )
 
       txt_h_tramo_custom = ft.TextField(
           value=init_h_val,
-          width=42,
-          height=32,
+          width=45,
+          height=34,
           content_padding=3,
-          text_size=11,
+          text_size=12,
           keyboard_type=ft.KeyboardType.NUMBER,
           border_color=lbl_color,
           text_align=ft.TextAlign.CENTER,
@@ -775,17 +744,19 @@ def main(page: ft.Page):
               ft.Text(
                   nombre_con_tag,
                   color=lbl_color if r != "PRINCIPAL" else "white",
-                  size=11,
+                  size=12,
                   weight=ft.FontWeight.BOLD,
               )
           ),
-          ft.DataCell(ft.Text(f"{item['m2']:.1f}", size=11)),
+          ft.DataCell(
+              ft.Text(f"{item['m2']:.1f}", size=12, color="white")
+          ),
           ft.DataCell(
               ft.Text(
                   f"{item['tons']:.2f}",
                   color=ACCENT_CYAN,
                   weight=ft.FontWeight.BOLD,
-                  size=11,
+                  size=12,
               )
           ),
           ft.DataCell(
@@ -793,13 +764,13 @@ def main(page: ft.Page):
                   [
                       ft.Text(
                           f"{int(item['cfm'])} CFM Total",
-                          size=11,
+                          size=12,
                           weight=ft.FontWeight.BOLD,
                           color="white",
                       ),
                       ft.Text(
                           f"Aire Nuevo: {int(item['cfm_aire_nuevo'])} CFM",
-                          size=9,
+                          size=10,
                           color=ACCENT_CYAN,
                       ),
                   ],
@@ -810,40 +781,21 @@ def main(page: ft.Page):
               ft.Row(
                   [
                       ft.Column(
-                          [ft.Text("Alt:", size=8, color=TEXT_MUTED), txt_h_tramo_custom],
+                          [
+                              ft.Text("Alt:", size=9, color=TEXT_MUTED),
+                              txt_h_tramo_custom,
+                          ],
                           spacing=1,
                       ),
-                      ft.Column([lbl_medida_tramo, lbl_detalles_tramo], spacing=1),
+                      ft.Column(
+                          [lbl_medida_tramo, lbl_detalles_tramo], spacing=1
+                      ),
                   ],
                   alignment=ft.MainAxisAlignment.START,
                   vertical_alignment=ft.CrossAxisAlignment.CENTER,
               )
           ),
       ]
-
-      if tipo_val == "QUIROFANO":
-        celdas_fila.append(
-            ft.DataCell(
-                ft.Column(
-                    [
-                        ft.Text(
-                            propuesta_salida,
-                            color=ACCENT_YELLOW,
-                            weight=ft.FontWeight.BOLD,
-                            size=11,
-                        ),
-                        ft.Text(f"{pulg2_salida} pulg²", size=9, color=TEXT_MUTED),
-                        ft.Text(
-                            caja_plenum_str,
-                            size=9,
-                            color=ACCENT_PINK,
-                            weight=ft.FontWeight.BOLD,
-                        ),
-                    ],
-                    spacing=1,
-                )
-            )
-        )
 
       dt.rows.append(ft.DataRow(cells=celdas_fila))
 
@@ -854,7 +806,7 @@ def main(page: ft.Page):
                 "TOTALES",
                 color=ACCENT_YELLOW,
                 weight=ft.FontWeight.BOLD,
-                size=11,
+                size=12,
             )
         ),
         ft.DataCell(
@@ -862,7 +814,7 @@ def main(page: ft.Page):
                 f"{total_m2:.1f} m² / {total_m3:.1f} m³",
                 color="white",
                 weight=ft.FontWeight.BOLD,
-                size=10,
+                size=11,
             )
         ),
         ft.DataCell(
@@ -870,7 +822,7 @@ def main(page: ft.Page):
                 f"{total_tr:.2f} TR",
                 color=ACCENT_CYAN,
                 weight=ft.FontWeight.BOLD,
-                size=11,
+                size=12,
             )
         ),
         ft.DataCell(
@@ -880,13 +832,13 @@ def main(page: ft.Page):
                         f"{int(total_cfm)} CFM Tot.",
                         color=ACCENT_GREEN,
                         weight=ft.FontWeight.BOLD,
-                        size=10,
+                        size=11,
                     ),
                     ft.Text(
                         f"A. Nuevo: {int(total_cfm_aire_nuevo)} CFM",
                         color=ACCENT_CYAN,
                         weight=ft.FontWeight.BOLD,
-                        size=9,
+                        size=10,
                     ),
                 ],
                 spacing=1,
@@ -897,21 +849,10 @@ def main(page: ft.Page):
                 f"CAPACIDAD: {total_btu:,.0f} BTU/h",
                 color=ACCENT_YELLOW,
                 weight=ft.FontWeight.BOLD,
-                size=10,
+                size=11,
             )
         ),
     ]
-    if tipo_val == "QUIROFANO":
-      celdas_totales.append(
-          ft.DataCell(
-              ft.Text(
-                  "SISTEMA HOSPITALARIO",
-                  color=ACCENT_PINK,
-                  weight=ft.FontWeight.BOLD,
-                  size=10,
-              )
-          )
-      )
 
     dt.rows.append(ft.DataRow(color="#0f172a", cells=celdas_totales))
     state["last_total_cfm"] = total_cfm
@@ -919,11 +860,32 @@ def main(page: ft.Page):
 
     if tipo_val == "QUIROFANO":
       diam_tot = state["last_diam_tot"]
-      lado_tot = lado_cuadrado(diam_tot)
       cfm_16 = total_cfm * (16.0 / 20.0)
-      diam_16 = calc_diam(cfm_16, caida)
       cfm_4 = total_cfm_aire_nuevo
-      diam_4 = calc_diam(cfm_4, caida)
+
+      area_filtro_std_24x24 = 576.0
+      area_intermedia_req_pulg2 = total_cfm / 2.5
+      num_filtros_merv = max(
+          1, math.ceil(area_intermedia_req_pulg2 / area_filtro_std_24x24)
+      )
+
+      if num_filtros_merv <= 1:
+        medida_caja_intermedia = (
+            'Caja de Filtros Intermedios: 24" x 24" (1 filtro estándar)'
+        )
+      elif num_filtros_merv == 2:
+        medida_caja_intermedia = (
+            'Caja de Filtros Intermedios: 24" x 48" o 48" x 24" (2 filtros'
+            " lado a lado en arreglo lateral)"
+        )
+      else:
+        medida_caja_intermedia = (
+            f"Caja de Filtros Intermedios: Banco modular con {num_filtros_merv}"
+            ' piezas de 24" x 24" en arreglo lateral'
+        )
+
+      num_modulos_hepa = math.ceil(total_cfm / 500.0)
+      diametro_cuello_hepa = '8" Ø (o 10" Ø)'
 
       def actualizar_hosp_bloque(
           txt_h, lbl_m, lbl_det, cfm_val, diam_val, key_id
@@ -946,18 +908,18 @@ def main(page: ft.Page):
         page.update()
 
       def crear_caja_hospital_ajustable(
-          titulo_bloque, cfm_val, diam_val, color_res, area_inicial_sq, key_id
+          titulo_bloque, cfm_val, diam_val, color_res, key_id
       ):
         val_inicial = state.get(key_id, "0")
         lbl_m = ft.Text("", size=13, color=color_res, weight=ft.FontWeight.BOLD)
-        lbl_det = ft.Text("", size=10, color="white")
+        lbl_det = ft.Text("", size=11, color="white")
 
         txt_h_box = ft.TextField(
             value=val_inicial,
-            width=45,
-            height=32,
+            width=48,
+            height=34,
             content_padding=3,
-            text_size=11,
+            text_size=12,
             keyboard_type=ft.KeyboardType.NUMBER,
             border_color=color_res,
             text_align=ft.TextAlign.CENTER,
@@ -976,14 +938,17 @@ def main(page: ft.Page):
                 [
                     ft.Text(
                         titulo_bloque,
-                        size=10,
+                        size=11,
                         color=TEXT_MUTED,
                         weight=ft.FontWeight.BOLD,
                     ),
                     ft.Row(
                         [
                             ft.Column(
-                                [ft.Text("Alt:", size=8, color=TEXT_MUTED), txt_h_box],
+                                [
+                                    ft.Text("Alt:", size=9, color=TEXT_MUTED),
+                                    txt_h_box,
+                                ],
                                 spacing=1,
                             ),
                             ft.Column([lbl_m, lbl_det], spacing=1),
@@ -995,74 +960,161 @@ def main(page: ft.Page):
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             ),
             bgcolor=BG_CARD,
-            padding=8,
-            border_radius=6,
+            padding=10,
+            border_radius=8,
             border=ft.Border.all(width=1, color="#334155"),
         )
 
-      # --- AVISO ADAPTADO PARA CELULAR ---
-      aviso_presion_positiva = ft.Container(
+      card_punto_intermedio = ft.Container(
           content=ft.Column(
               [
-                  ft.Text(
-                      "ℹ️ PRESIÓN POSITIVA",
-                      size=11,
-                      color=ACCENT_CYAN,
-                      weight=ft.FontWeight.BOLD,
+                  ft.Row(
+                      [
+                          ft.Text(
+                              "1️⃣ BANCO DE FILTROS INTERMEDIOS (MERV 13-14)",
+                              size=12,
+                              color=ACCENT_CYAN,
+                              weight=ft.FontWeight.BOLD,
+                          )
+                      ]
                   ),
                   ft.Text(
-                      "Mantener inyección de aire 10% a 20% superior al caudal de extracción.",
-                      size=10,
+                      f"• {medida_caja_intermedia}\n• Objetivo: Asegurar flujo libre y velocidad frontal menor a 500 FPM.",
+                      size=12,
                       color=WHITE,
-                      text_align=ft.TextAlign.CENTER,
                   ),
               ],
-              horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-              spacing=2,
+              spacing=4,
           ),
           bgcolor=BG_CARD,
-          padding=8,
-          border_radius=6,
+          padding=12,
+          border_radius=8,
           border=ft.Border.all(width=1, color=ACCENT_CYAN),
+      )
+
+      card_punto_hepa = ft.Container(
+          content=ft.Column(
+              [
+                  ft.Row(
+                      [
+                          ft.Text(
+                              "2️⃣ FILTROS HEPA TERMINALES",
+                              size=12,
+                              color=ACCENT_PINK,
+                              weight=ft.FontWeight.BOLD,
+                          )
+                      ]
+                  ),
+                  ft.Text(
+                      f"• Se requieren **{num_modulos_hepa} módulos estándar de 24\" x 24\"** (500 CFM c/u).\n• Cuello de entrada sugerido en cada caja plenum: **{diametro_cuello_hepa}**.",
+                      size=12,
+                      color=WHITE,
+                  ),
+              ],
+              spacing=4,
+          ),
+          bgcolor=BG_CARD,
+          padding=12,
+          border_radius=8,
+          border=ft.Border.all(width=1, color=ACCENT_PINK),
+      )
+
+      card_punto_presion = ft.Container(
+          content=ft.Column(
+              [
+                  ft.Row(
+                      [
+                          ft.Text(
+                              "3️⃣ CONTROL DE PRESIÓN POSITIVA",
+                              size=12,
+                              color=ACCENT_AMBER,
+                              weight=ft.FontWeight.BOLD,
+                          )
+                      ]
+                  ),
+                  ft.Text(
+                      "• Mantener la inyección de aire limpio entre 10% y 20% superior al caudal total de extracción para evitar ingreso de contaminantes.",
+                      size=12,
+                      color=WHITE,
+                  ),
+              ],
+              spacing=4,
+          ),
+          bgcolor=BG_CARD,
+          padding=12,
+          border_radius=8,
+          border=ft.Border.all(width=1, color=ACCENT_AMBER),
+      )
+
+      card_punto_humedad = ft.Container(
+          content=ft.Column(
+              [
+                  ft.Row(
+                      [
+                          ft.Text(
+                              "4️⃣ CONTROL DE HUMIDIFICACIÓN",
+                              size=12,
+                              color=ACCENT_TEAL,
+                              weight=ft.FontWeight.BOLD,
+                          )
+                      ]
+                  ),
+                  ft.Text(
+                      "• Mantener la humedad relativa (HR) del quirófano estrictamente en el rango de **40% a 60%** para control de patógenos y confort.",
+                      size=12,
+                      color=WHITE,
+                  ),
+              ],
+              spacing=4,
+          ),
+          bgcolor=BG_CARD,
+          padding=12,
+          border_radius=8,
+          border=ft.Border.all(width=1, color=ACCENT_TEAL),
       )
 
       box_principal = ft.Container(
           content=ft.Column(
               [
                   ft.Text(
-                      "DUCTO PRINCIPAL INICIAL (SALIDA DEL EQUIPO) - DESGLOSE"
-                      " HOSPITALARIO (EDITABLE)",
+                      "ESPECIFICACIONES DEL SISTEMA HOSPITALARIO",
                       color=ACCENT_YELLOW,
                       weight=ft.FontWeight.BOLD,
-                      size=11,
+                      size=13,
                   ),
-                  aviso_presion_positiva,
+                  card_punto_intermedio,
+                  card_punto_hepa,
+                  card_punto_presion,
+                  card_punto_humedad,
+                  ft.Text(
+                      "DESGLOSE DE DUCTOS HOSPITALARIOS (EDITABLE)",
+                      color=ACCENT_YELLOW,
+                      weight=ft.FontWeight.BOLD,
+                      size=13,
+                  ),
                   crear_caja_hospital_ajustable(
-                      "1. DUCTO GENERAL TOTAL (20 Cambios):",
+                      "A. DUCTO GENERAL TOTAL (20 Cambios):",
                       total_cfm,
                       diam_tot,
                       ACCENT_GREEN,
-                      lado_tot * lado_tot,
                       "h1",
                   ),
                   crear_caja_hospital_ajustable(
-                      "2. DUCTO PARA 16 CAMBIOS DE AIRE:",
+                      "B. DUCTO PARA 16 CAMBIOS DE AIRE:",
                       cfm_16,
                       calc_diam(cfm_16, caida),
                       ACCENT_CYAN,
-                      lado_cuadrado(calc_diam(cfm_16, caida)) ** 2,
                       "h2",
                   ),
                   crear_caja_hospital_ajustable(
-                      "3. DUCTO PARA 4 CAMBIOS RESTANTES (AIRE NUEVO):",
+                      "C. DUCTO PARA 4 CAMBIOS RESTANTES (AIRE NUEVO):",
                       cfm_4,
                       calc_diam(cfm_4, caida),
                       ACCENT_PINK,
-                      lado_cuadrado(calc_diam(cfm_4, caida)) ** 2,
                       "h3",
                   ),
               ],
-              spacing=8,
+              spacing=10,
           ),
           bgcolor=BG_DARK,
           padding=12,
@@ -1079,17 +1131,17 @@ def main(page: ft.Page):
                       "DUCTO PRINCIPAL INICIAL (SALIDA DEL EQUIPO)",
                       color=ACCENT_YELLOW,
                       weight=ft.FontWeight.BOLD,
-                      size=11,
+                      size=12,
                   ),
                   ft.Text(
                       f'{lado_tot}"x{lado_tot}"  |  {diam_tot:.1f}" Ø',
-                      size=14,
+                      size=15,
                       color=ACCENT_GREEN,
                       weight=ft.FontWeight.BOLD,
                   ),
                   ft.Text(
                       f"{lado_tot*lado_tot} pulg² | {total_cfm:.0f} CFM",
-                      size=10,
+                      size=11,
                       color="white",
                   ),
               ],
