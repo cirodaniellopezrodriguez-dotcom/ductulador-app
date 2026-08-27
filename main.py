@@ -599,8 +599,7 @@ def main(page: ft.Page):
     if total_cfm == 0:
       return
 
-    # Ajuste dinámico de altura mínima de las filas según el tipo de proyecto (mayor altura en quirófano para evitar amontonamiento)
-    altura_min_fila = 78 if tipo_val == "QUIROFANO" else 52
+    altura_min_fila = 110 if tipo_val == "QUIROFANO" else 75
 
     columnas_tabla = [
         ft.DataColumn(
@@ -640,7 +639,7 @@ def main(page: ft.Page):
     ]
 
     dt = ft.DataTable(
-        column_spacing=14,
+        column_spacing=12,
         data_row_min_height=altura_min_fila,
         border=ft.Border.all(width=1, color=ACCENT_BLUE),
         vertical_lines=ft.BorderSide(1.5, ACCENT_CYAN),
@@ -716,18 +715,18 @@ def main(page: ft.Page):
           init_medida_tramo,
           color=lbl_color,
           weight=ft.FontWeight.BOLD,
-          size=13,
+          size=12,
       )
       lbl_detalles_tramo = ft.Text(
-          f"{init_detalles_tramo} [{tag}]", size=10, color=TEXT_MUTED
+          f"{init_detalles_tramo} [{tag}]", size=9, color=TEXT_MUTED
       )
 
       txt_h_tramo_custom = ft.TextField(
           value=init_h_val,
-          width=45,
-          height=34,
-          content_padding=3,
-          text_size=12,
+          width=40,
+          height=32,
+          content_padding=2,
+          text_size=11,
           keyboard_type=ft.KeyboardType.NUMBER,
           border_color=lbl_color,
           text_align=ft.TextAlign.CENTER,
@@ -744,84 +743,102 @@ def main(page: ft.Page):
       )
 
       if tipo_val == "QUIROFANO":
-        cfm_rec_ind = max(0, item['cfm'] - item['cfm_aire_nuevo'])
-        contenido_cfm = ft.Column(
-            [
-                ft.Text(
-                    f"Aire nuevo: {int(item['cfm_aire_nuevo'])} CFM",
-                    size=10,
-                    color=ACCENT_CYAN,
-                ),
-                ft.Text(
-                    f"Aire recirculatorio: {int(cfm_rec_ind)} CFM",
-                    size=10,
-                    color=TEXT_MUTED,
-                ),
-                ft.Text(
-                    f"Total: {int(item['cfm'])} CFM",
-                    size=12,
-                    weight=ft.FontWeight.BOLD,
-                    color="white",
-                ),
-            ],
-            spacing=2,
+        cfm_rec_ind = max(0, item["cfm"] - item["cfm_aire_nuevo"])
+        contenido_cfm = ft.Container(
+            content=ft.Column(
+                [
+                    ft.Text(
+                        f"Aire nuevo: {int(item['cfm_aire_nuevo'])} CFM",
+                        size=10,
+                        color=ACCENT_CYAN,
+                    ),
+                    ft.Text(
+                        f"Aire recirculatorio: {int(cfm_rec_ind)} CFM",
+                        size=10,
+                        color=TEXT_MUTED,
+                    ),
+                    ft.Text(
+                        f"Total: {int(item['cfm'])} CFM",
+                        size=11,
+                        weight=ft.FontWeight.BOLD,
+                        color="white",
+                    ),
+                ],
+                spacing=1,
+            ),
+            alignment=ft.alignment.Alignment(0, -1),
         )
       else:
-        contenido_cfm = ft.Column(
-            [
-                ft.Text(
-                    f"{int(item['cfm'])} CFM",
-                    size=12,
-                    weight=ft.FontWeight.BOLD,
-                    color="white",
-                ),
-                ft.Text(
-                    f'Salida: {item["d"]:.1f}" Ø',
-                    size=11,
-                    color=ACCENT_CYAN,
-                    weight=ft.FontWeight.BOLD,
-                ),
-            ],
-            spacing=1,
+        contenido_cfm = ft.Container(
+            content=ft.Column(
+                [
+                    ft.Text(
+                        f"{int(item['cfm'])} CFM",
+                        size=12,
+                        weight=ft.FontWeight.BOLD,
+                        color="white",
+                    ),
+                    ft.Text(
+                        f'Salida: {item["d"]:.1f}" Ø',
+                        size=10,
+                        color=ACCENT_CYAN,
+                        weight=ft.FontWeight.BOLD,
+                    ),
+                ],
+                spacing=1,
+            ),
+            alignment=ft.alignment.Alignment(0, -1),
         )
 
       celdas_fila = [
           ft.DataCell(
-              ft.Text(
-                  nombre_con_tag,
-                  color=lbl_color if r != "PRINCIPAL" else "white",
-                  size=12,
-                  weight=ft.FontWeight.BOLD,
+              ft.Container(
+                  content=ft.Text(
+                      nombre_con_tag,
+                      color=lbl_color if r != "PRINCIPAL" else "white",
+                      size=11,
+                      weight=ft.FontWeight.BOLD,
+                  ),
+                  alignment=ft.alignment.Alignment(0, -1),
               )
           ),
           ft.DataCell(
-              ft.Text(f"{item['m2']:.1f}", size=12, color="white")
+              ft.Container(
+                  content=ft.Text(f"{item['m2']:.1f}", size=11, color="white"),
+                  alignment=ft.alignment.Alignment(0, -1),
+              )
           ),
           ft.DataCell(
-              ft.Text(
-                  f"{item['tons']:.2f}",
-                  color=ACCENT_CYAN,
-                  weight=ft.FontWeight.BOLD,
-                  size=12,
+              ft.Container(
+                  content=ft.Text(
+                      f"{item['tons']:.2f}",
+                      color=ACCENT_CYAN,
+                      weight=ft.FontWeight.BOLD,
+                      size=11,
+                  ),
+                  alignment=ft.alignment.Alignment(0, -1),
               )
           ),
           ft.DataCell(contenido_cfm),
           ft.DataCell(
-              ft.Row(
-                  [
-                      ft.Column(
-                          [
-                              ft.Text("Alt:", size=9, color=TEXT_MUTED),
-                              txt_h_tramo_custom,
-                          ],
-                          spacing=1,
-                      ),
-                      ft.Column(
-                          [lbl_medida_tramo, lbl_detalles_tramo], spacing=1
-                      ),
-                  ],
-                  alignment=ft.MainAxisAlignment.START,
-                  vertical_alignment=ft.CrossAxisAlignment.CENTER,
+              ft.Container(
+                  content=ft.Row(
+                      [
+                          ft.Column(
+                              [
+                                  ft.Text("Alt:", size=8, color=TEXT_MUTED),
+                                  txt_h_tramo_custom,
+                              ],
+                              spacing=1,
+                          ),
+                          ft.Column(
+                              [lbl_medida_tramo, lbl_detalles_tramo], spacing=1
+                          ),
+                      ],
+                      alignment=ft.MainAxisAlignment.START,
+                      vertical_alignment=ft.CrossAxisAlignment.START,
+                  ),
+                  alignment=ft.alignment.Alignment(0, -1),
               )
           ),
       ]
@@ -832,68 +849,86 @@ def main(page: ft.Page):
     total_cfm_recirculatorio = max(0, total_cfm - total_cfm_aire_nuevo)
 
     if tipo_val == "QUIROFANO":
-      contenido_totales_cfm = ft.Column(
-          [
-              ft.Text(
-                  f"Aire nuevo: {int(total_cfm_aire_nuevo)} CFM",
-                  color=ACCENT_CYAN,
-                  weight=ft.FontWeight.BOLD,
-                  size=10,
-              ),
-              ft.Text(
-                  f"Aire recirculatorio: {int(total_cfm_recirculatorio)} CFM",
-                  color=TEXT_MUTED,
-                  size=10,
-              ),
-              ft.Text(
-                  f"Total: {int(total_cfm)} CFM",
-                  color=ACCENT_GREEN,
-                  weight=ft.FontWeight.BOLD,
-                  size=11,
-              ),
-          ],
-          spacing=2,
+      contenido_totales_cfm = ft.Container(
+          content=ft.Column(
+              [
+                  ft.Text(
+                      f"Aire nuevo: {int(total_cfm_aire_nuevo)} CFM",
+                      color=ACCENT_CYAN,
+                      weight=ft.FontWeight.BOLD,
+                      size=10,
+                  ),
+                  ft.Text(
+                      f"Aire recirculatorio: {int(total_cfm_recirculatorio)} CFM",
+                      color=TEXT_MUTED,
+                      size=10,
+                  ),
+                  ft.Text(
+                      f"Total: {int(total_cfm)} CFM",
+                      color=ACCENT_GREEN,
+                      weight=ft.FontWeight.BOLD,
+                      size=11,
+                  ),
+              ],
+              spacing=1,
+          ),
+          alignment=ft.alignment.Alignment(0, -1),
       )
     else:
-      contenido_totales_cfm = ft.Text(
-          f"{int(total_cfm)} CFM",
-          color=ACCENT_GREEN,
-          weight=ft.FontWeight.BOLD,
-          size=12,
+      contenido_totales_cfm = ft.Container(
+          content=ft.Text(
+              f"{int(total_cfm)} CFM",
+              color=ACCENT_GREEN,
+              weight=ft.FontWeight.BOLD,
+              size=11,
+          ),
+          alignment=ft.alignment.Alignment(0, -1),
       )
 
     celdas_totales = [
         ft.DataCell(
-            ft.Text(
-                "TOTALES",
-                color=ACCENT_YELLOW,
-                weight=ft.FontWeight.BOLD,
-                size=12,
+            ft.Container(
+                content=ft.Text(
+                    "TOTALES",
+                    color=ACCENT_YELLOW,
+                    weight=ft.FontWeight.BOLD,
+                    size=11,
+                ),
+                alignment=ft.alignment.Alignment(0, -1),
             )
         ),
         ft.DataCell(
-            ft.Text(
-                f"{total_m2:.1f} m² / {total_m3:.1f} m³",
-                color="white",
-                weight=ft.FontWeight.BOLD,
-                size=11,
+            ft.Container(
+                content=ft.Text(
+                    f"{total_m2:.1f}m²/{total_m3:.1f}m³",
+                    color="white",
+                    weight=ft.FontWeight.BOLD,
+                    size=10,
+                ),
+                alignment=ft.alignment.Alignment(0, -1),
             )
         ),
         ft.DataCell(
-            ft.Text(
-                f"{total_tr:.2f} TR",
-                color=ACCENT_CYAN,
-                weight=ft.FontWeight.BOLD,
-                size=12,
+            ft.Container(
+                content=ft.Text(
+                    f"{total_tr:.2f} TR",
+                    color=ACCENT_CYAN,
+                    weight=ft.FontWeight.BOLD,
+                    size=11,
+                ),
+                alignment=ft.alignment.Alignment(0, -1),
             )
         ),
         ft.DataCell(contenido_totales_cfm),
         ft.DataCell(
-            ft.Text(
-                f"CAPACIDAD: {total_btu:,.0f} BTU/h",
-                color=ACCENT_YELLOW,
-                weight=ft.FontWeight.BOLD,
-                size=11,
+            ft.Container(
+                content=ft.Text(
+                    f"CAPACIDAD: {total_btu:,.0f} BTU/h",
+                    color=ACCENT_YELLOW,
+                    weight=ft.FontWeight.BOLD,
+                    size=10,
+                ),
+                alignment=ft.alignment.Alignment(0, -1),
             )
         ),
     ]
@@ -1256,9 +1291,10 @@ def main(page: ft.Page):
         [
             header_resumen,
             ft.Row([dt], scroll=ft.ScrollMode.ALWAYS),
+            ft.Container(height=8),
             box_principal,
         ],
-        spacing=10,
+        spacing=16,
     )
     card_resultado.visible = True
     page.update()
