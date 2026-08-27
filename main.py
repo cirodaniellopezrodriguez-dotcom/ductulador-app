@@ -599,7 +599,9 @@ def main(page: ft.Page):
     if total_cfm == 0:
       return
 
-    # Definición limpia de las columnas de la tabla (sin columnas adicionales de diámetro)
+    # Ajuste dinámico de altura mínima de las filas según el tipo de proyecto (mayor altura en quirófano para evitar amontonamiento)
+    altura_min_fila = 78 if tipo_val == "QUIROFANO" else 52
+
     columnas_tabla = [
         ft.DataColumn(
             ft.Text(
@@ -639,7 +641,7 @@ def main(page: ft.Page):
 
     dt = ft.DataTable(
         column_spacing=14,
-        data_row_min_height=52,
+        data_row_min_height=altura_min_fila,
         border=ft.Border.all(width=1, color=ACCENT_BLUE),
         vertical_lines=ft.BorderSide(1.5, ACCENT_CYAN),
         horizontal_lines=ft.BorderSide(1, "#334155"),
@@ -741,7 +743,6 @@ def main(page: ft.Page):
           f"{item['nome']} [{tag}]" if r != "PRINCIPAL" else item["nome"]
       )
 
-      # Integración limpia del diámetro de salida de aire directamente en la celda de CFM (sin añadir columnas)
       if tipo_val == "QUIROFANO":
         cfm_rec_ind = max(0, item['cfm'] - item['cfm_aire_nuevo'])
         contenido_cfm = ft.Column(
@@ -763,10 +764,9 @@ def main(page: ft.Page):
                     color="white",
                 ),
             ],
-            spacing=1,
+            spacing=2,
         )
       else:
-        # Se incluye el caudal y el diámetro de salida individual directamente en esta celda ampliada
         contenido_cfm = ft.Column(
             [
                 ft.Text(
@@ -852,7 +852,7 @@ def main(page: ft.Page):
                   size=11,
               ),
           ],
-          spacing=1,
+          spacing=2,
       )
     else:
       contenido_totales_cfm = ft.Text(
