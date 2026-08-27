@@ -599,6 +599,7 @@ def main(page: ft.Page):
     if total_cfm == 0:
       return
 
+    # Definición limpia de las columnas de la tabla (sin columnas adicionales de diámetro)
     columnas_tabla = [
         ft.DataColumn(
             ft.Text(
@@ -620,7 +621,7 @@ def main(page: ft.Page):
         ),
         ft.DataColumn(
             ft.Text(
-                "CFM / AIRE NUEVO",
+                "CFM",
                 color=ACCENT_YELLOW,
                 weight=ft.FontWeight.BOLD,
                 size=12,
@@ -739,6 +740,51 @@ def main(page: ft.Page):
       nombre_con_tag = (
           f"{item['nome']} [{tag}]" if r != "PRINCIPAL" else item["nome"]
       )
+
+      # Integración limpia del diámetro de salida de aire directamente en la celda de CFM (sin añadir columnas)
+      if tipo_val == "QUIROFANO":
+        cfm_rec_ind = max(0, item['cfm'] - item['cfm_aire_nuevo'])
+        contenido_cfm = ft.Column(
+            [
+                ft.Text(
+                    f"Aire nuevo: {int(item['cfm_aire_nuevo'])} CFM",
+                    size=10,
+                    color=ACCENT_CYAN,
+                ),
+                ft.Text(
+                    f"Aire recirculatorio: {int(cfm_rec_ind)} CFM",
+                    size=10,
+                    color=TEXT_MUTED,
+                ),
+                ft.Text(
+                    f"Total: {int(item['cfm'])} CFM",
+                    size=12,
+                    weight=ft.FontWeight.BOLD,
+                    color="white",
+                ),
+            ],
+            spacing=1,
+        )
+      else:
+        # Se incluye el caudal y el diámetro de salida individual directamente en esta celda ampliada
+        contenido_cfm = ft.Column(
+            [
+                ft.Text(
+                    f"{int(item['cfm'])} CFM",
+                    size=12,
+                    weight=ft.FontWeight.BOLD,
+                    color="white",
+                ),
+                ft.Text(
+                    f'Salida: {item["d"]:.1f}" Ø',
+                    size=11,
+                    color=ACCENT_CYAN,
+                    weight=ft.FontWeight.BOLD,
+                ),
+            ],
+            spacing=1,
+        )
+
       celdas_fila = [
           ft.DataCell(
               ft.Text(
@@ -759,24 +805,7 @@ def main(page: ft.Page):
                   size=12,
               )
           ),
-          ft.DataCell(
-              ft.Column(
-                  [
-                      ft.Text(
-                          f"{int(item['cfm'])} CFM Total",
-                          size=12,
-                          weight=ft.FontWeight.BOLD,
-                          color="white",
-                      ),
-                      ft.Text(
-                          f"Aire Nuevo: {int(item['cfm_aire_nuevo'])} CFM",
-                          size=10,
-                          color=ACCENT_CYAN,
-                      ),
-                  ],
-                  spacing=1,
-              )
-          ),
+          ft.DataCell(contenido_cfm),
           ft.DataCell(
               ft.Row(
                   [
@@ -800,6 +829,39 @@ def main(page: ft.Page):
       dt.rows.append(ft.DataRow(cells=celdas_fila))
 
     total_btu = total_tr * 12000
+    total_cfm_recirculatorio = max(0, total_cfm - total_cfm_aire_nuevo)
+
+    if tipo_val == "QUIROFANO":
+      contenido_totales_cfm = ft.Column(
+          [
+              ft.Text(
+                  f"Aire nuevo: {int(total_cfm_aire_nuevo)} CFM",
+                  color=ACCENT_CYAN,
+                  weight=ft.FontWeight.BOLD,
+                  size=10,
+              ),
+              ft.Text(
+                  f"Aire recirculatorio: {int(total_cfm_recirculatorio)} CFM",
+                  color=TEXT_MUTED,
+                  size=10,
+              ),
+              ft.Text(
+                  f"Total: {int(total_cfm)} CFM",
+                  color=ACCENT_GREEN,
+                  weight=ft.FontWeight.BOLD,
+                  size=11,
+              ),
+          ],
+          spacing=1,
+      )
+    else:
+      contenido_totales_cfm = ft.Text(
+          f"{int(total_cfm)} CFM",
+          color=ACCENT_GREEN,
+          weight=ft.FontWeight.BOLD,
+          size=12,
+      )
+
     celdas_totales = [
         ft.DataCell(
             ft.Text(
@@ -825,25 +887,7 @@ def main(page: ft.Page):
                 size=12,
             )
         ),
-        ft.DataCell(
-            ft.Column(
-                [
-                    ft.Text(
-                        f"{int(total_cfm)} CFM Tot.",
-                        color=ACCENT_GREEN,
-                        weight=ft.FontWeight.BOLD,
-                        size=11,
-                    ),
-                    ft.Text(
-                        f"A. Nuevo: {int(total_cfm_aire_nuevo)} CFM",
-                        color=ACCENT_CYAN,
-                        weight=ft.FontWeight.BOLD,
-                        size=10,
-                    ),
-                ],
-                spacing=1,
-            )
-        ),
+        ft.DataCell(contenido_totales_cfm),
         ft.DataCell(
             ft.Text(
                 f"CAPACIDAD: {total_btu:,.0f} BTU/h",
@@ -971,12 +1015,20 @@ def main(page: ft.Page):
                   ft.Row(
                       [
                           ft.Text(
-                              "1️⃣ BANCO DE FILTROS INTERMEDIOS (MERV 13-14)",
+                              "1️⃣ BANCO DE FILTROS INTERMEDIOS",
                               size=12,
                               color=ACCENT_CYAN,
                               weight=ft.FontWeight.BOLD,
-                          )
-                      ]
+                          ),
+                          ft.Text(
+                              "(MERV 13-14)",
+                              size=12,
+                              color=ACCENT_CYAN,
+                              weight=ft.FontWeight.BOLD,
+                          ),
+                      ],
+                      wrap=True,
+                      spacing=6,
                   ),
                   ft.Text(
                       f"• {medida_caja_intermedia}\n• Objetivo: Asegurar flujo libre y velocidad frontal menor a 500 FPM.",
@@ -1006,7 +1058,7 @@ def main(page: ft.Page):
                       ]
                   ),
                   ft.Text(
-                      f"• Se requieren **{num_modulos_hepa} módulos estándar de 24\" x 24\"** (500 CFM c/u).\n• Cuello de entrada sugerido en cada caja plenum: **{diametro_cuello_hepa}**.",
+                      f'• Se requieren **{num_modulos_hepa} módulos estándar de 24" x 24"** (500 CFM c/u).\n• Cuello de entrada sugerido en cada caja plenum: **{diametro_cuello_hepa}**.',
                       size=12,
                       color=WHITE,
                   ),
@@ -1033,7 +1085,7 @@ def main(page: ft.Page):
                       ]
                   ),
                   ft.Text(
-                      "• Mantener la inyección de aire limpio entre 10% y 20% superior al caudal total de extracción para evitar ingreso de contaminantes.",
+                      "• Mantener la inyección de aire limpio entre 10% y 20% superior al caudal total de extracción para evitar ingreso de contaminantes.\n• **Rango en manómetro diferencial:** Mantener entre **+0.01 y +0.03 pulg. c.a.** (aprox. **2.5 a 7.5 Pa**) respecto al pasillo.",
                       size=12,
                       color=WHITE,
                   ),
@@ -1046,13 +1098,40 @@ def main(page: ft.Page):
           border=ft.Border.all(width=1, color=ACCENT_AMBER),
       )
 
+      card_punto_aire_nuevo = ft.Container(
+          content=ft.Column(
+              [
+                  ft.Row(
+                      [
+                          ft.Text(
+                              "4️⃣ TASA DE CAMBIOS DE AIRE NUEVO",
+                              size=12,
+                              color=ACCENT_BLUE,
+                              weight=ft.FontWeight.BOLD,
+                          )
+                      ]
+                  ),
+                  ft.Text(
+                      f"• **4 cambios de aire nuevo por hora (ACH)** requeridos por norma hospitalaria.\n• Caudal equivalente generado para este proyecto: **{int(total_cfm_aire_nuevo)} CFM** (sobre un total de {int(total_cfm)} CFM de inyección total).",
+                      size=12,
+                      color=WHITE,
+                  ),
+              ],
+              spacing=4,
+          ),
+          bgcolor=BG_CARD,
+          padding=12,
+          border_radius=8,
+          border=ft.Border.all(width=1, color=ACCENT_BLUE),
+      )
+
       card_punto_humedad = ft.Container(
           content=ft.Column(
               [
                   ft.Row(
                       [
                           ft.Text(
-                              "4️⃣ CONTROL DE HUMIDIFICACIÓN",
+                              "5️⃣ CONTROL DE HUMIDIFICACIÓN",
                               size=12,
                               color=ACCENT_TEAL,
                               weight=ft.FontWeight.BOLD,
@@ -1085,6 +1164,7 @@ def main(page: ft.Page):
                   card_punto_intermedio,
                   card_punto_hepa,
                   card_punto_presion,
+                  card_punto_aire_nuevo,
                   card_punto_humedad,
                   ft.Text(
                       "DESGLOSE DE DUCTOS HOSPITALARIOS (EDITABLE)",
@@ -1460,4 +1540,4 @@ def main(page: ft.Page):
 
 
 if __name__ == "__main__":
-  ft.app(target=main)
+  ft.run(main)
